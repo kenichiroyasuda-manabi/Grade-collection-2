@@ -159,7 +159,7 @@ async function handleFiles(files) {
     for (let file of files) {
         log(`${file.name} を読込中...`);
         try {
-            const compressedData = await resizeAndConvert(file, 1200);
+            const compressedData = await resizeAndConvert(file, 1000);
             uploadedFiles.push({ base64: compressedData.split(',')[1], mediaType: "image/jpeg", name: file.name, previewUrl: compressedData });
             await new Promise(r => setTimeout(r, 100));
         } catch (err) { log(`❌エラー: ${err}`); return; }
@@ -182,27 +182,20 @@ function renderPreviews() {
 }
 
 // 【重要】解析はGAS経由で行うことでCORSを回避
+// 修正後のコードイメージ
 async function analyzeImage() {
-  document.getElementById('phase-upload').style.display = 'none';
-  document.getElementById('phase-loading').style.display = 'block';
-  
+  // ...
   const payload = {
-    action: "analyze",
+    action: "analyze", // GAS側に「AI解析をして」と伝える合言葉
     images: uploadedFiles,
-    mode: currentMode,
-    prompt: "成績表の点数、科目、偏差値を抽出しJSONで返してください。"
+    prompt: "科目と点数を抽出してJSONで返して"
   };
 
-  try {
-    const res = await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
-    extractedData = await res.json();
-    renderScoreTable(extractedData);
-    document.getElementById('phase-loading').style.display = 'none';
-    document.getElementById('phase-confirm').style.display = 'block';
-  } catch (e) {
-    alert("解析エラーが発生しました。");
-    location.reload();
-  }
+  const res = await fetch(GAS_ENDPOINT, { // 直接AIを叩かず、GASに送る
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+  // ...
 }
 
 function renderScoreTable(data) {
