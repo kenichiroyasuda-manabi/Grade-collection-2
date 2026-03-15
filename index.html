@@ -184,19 +184,39 @@ function renderPreviews() {
 // 【重要】解析はGAS経由で行うことでCORSを回避
 // 修正後のコードイメージ
 async function analyzeImage() {
-  // ...
+  // 1. ボタンを無効化して「解析中」画面へ
+  document.getElementById('phase-upload').style.display = 'none';
+  document.getElementById('phase-loading').style.display = 'block';
+  
+  // 2. GASに送るデータを作る
   const payload = {
-    action: "analyze", // GAS側に「AI解析をして」と伝える合言葉
+    action: "analyze", // GAS側のif文と一致させる合言葉
     images: uploadedFiles,
-    prompt: "科目と点数を抽出してJSONで返して"
+    mode: currentMode,
+    prompt: "画像から科目、点数、満点を正確に抽出してJSONで返してください。"
   };
 
-  const res = await fetch(GAS_ENDPOINT, { // 直接AIを叩かず、GASに送る
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
-  // ...
-}
+  try {
+    // 3. GASへ送信
+    const res = await fetch(GAS_ENDPOINT, { 
+      method: 'POST', 
+      body: JSON.stringify(payload) 
+    });
+    
+    // 4. AIの回答を解析
+    extractedData = await res.json();
+    
+    // 5. 画面に表を表示
+    renderScoreTable(extractedData);
+    
+    document.getElementById('phase-loading').style.display = 'none';
+    document.getElementById('phase-confirm').style.display = 'block';
+  } catch (e) {
+    // エラーが起きたら警告を出してリロード
+    alert("解析エラーが発生しました。通信環境を確認してください。");
+    location.reload();
+  }
+} 
 
 function renderScoreTable(data) {
   const table = document.getElementById('scoreTable');
