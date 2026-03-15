@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>トウコベ｜成績登録</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FF6920; --orange-dark: #E55A15; --orange-light: #FFF2EB; --orange-mid: #FFDFC9;
+    --bg: #F5F8FA; --white: #FFFFFF; --text: #1A1A1A; --text2: #666666; --text3: #AAAAAA;
+    --border: #E8EEF2; --green: #2AC77A; --green-light: #E8FAF2; --red: #F04E37; --red-light: #FEF0EE;
+    --radius: 16px; --radius-sm: 10px; --shadow: 0 2px 12px rgba(0,0,0,0.07); --shadow-lg: 0 4px 24px rgba(255,105,32,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); max-width: 390px; margin: 0 auto; min-height: 100vh; }
+  .header { background: var(--white); border-bottom: 1px solid var(--border); padding: 14px 18px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 8px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+  .logo-icon { width: 32px; height: 32px; background: var(--orange); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .logo-text { font-size: 16px; font-weight: 900; color: var(--orange); }
+  .header-sub { font-size: 11px; color: var(--text2); margin-left: auto; }
+  .content { padding: 16px 14px 40px; display: flex; flex-direction: column; gap: 12px; }
+  .panel { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+  .panel-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .panel-sub { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 16px; }
+  .upload-area { border: 2px dashed var(--orange-mid); border-radius: var(--radius-sm); background: var(--orange-light); padding: 32px 20px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+  .btn-analyze, .btn-submit { width: 100%; padding: 15px; background: var(--orange); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow-lg); transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-analyze:disabled { background: var(--text3); box-shadow: none; cursor: not-allowed; }
+  .score-input { width: 100%; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 16px; font-weight: 700; font-family: 'DM Mono', monospace; background: var(--bg); outline: none; }
+  .score-row { display: flex; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); gap: 10px; }
+  .confidence-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .confidence-dot.high { background: var(--green); }
+  .confidence-dot.medium { background: #F59E0B; }
+  .confidence-dot.low { background: var(--red); }
+  .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+  .tag-dev { background: #EEF2FF; color: #4F46E5; }
+  .steps { display: flex; align-items: center; margin-bottom: 4px; }
+  .step { flex: 1; text-align: center; font-size: 10px; color: var(--text3); position: relative; padding-bottom: 8px; }
+  .step.active { color: var(--orange); border-bottom: 2px solid var(--orange); }
+</style>
+</head>
+<body>
+
+<!-- 診断用ボックス -->
+<div id="debugBox" style="display:none; background:#333; color:#0f0; padding:10px; font-size:10px; position:fixed; bottom:0; left:0; right:0; z-index:9999; font-family:monospace; opacity:0.9;"></div>
+  
+<div class="header">
+  <div class="logo-icon">🏠</div>
+  <div class="logo-text">トウコベ</div>
+  <div class="header-sub">成績登録</div>
+</div>
+
+<div class="content">
+  <div class="steps">
+    <div class="step active" id="step1">写真アップ</div>
+    <div class="step" id="step2">AI解析</div>
+    <div class="step" id="step3">確認・送信</div>
+  </div>
+
+  <div class="panel" id="phase-upload">
+    <div id="modeSelect">
+      <div class="panel-title">📋 種類を選択してください</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+        <button onclick="selectMode('moshi')" id="modeBtnMoshi" style="padding:15px; border-radius:10px; border:2px solid #eee; background:#fff;">📊 模試</button>
+        <button onclick="selectMode('teiki')" id="modeBtnTeiki" style="padding:15px; border-radius:10px; border:2px solid #eee; background:#fff;">📝 定期テスト</button>
+      </div>
+    </div>
+
+    <div id="uploadSection" style="display:none;margin-top:14px;">
+      <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" onchange="handleFiles(this.files)">
+        <div style="font-size:40px;">📄</div>
+        <div style="font-weight:700; color:var(--orange);">タップして写真を選択</div>
+      </div>
+      <div id="previewArea" style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;"></div>
+      <button class="btn-analyze" id="analyzeBtn" disabled onclick="analyzeImage()" style="margin-top:15px;">🔍 AIで成績を読み取る</button>
+    </div>
+  </div>
+
+  <div class="panel" id="phase-loading" style="display:none; text-align:center;">
+    <div style="padding:30px 0;">
+      <div style="width:40px;height:40px;border:4px solid #f3f3f3;border-top:4px solid var(--orange);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto;"></div>
+      <p style="margin-top:15px;font-weight:bold;">AIが解析中...</p>
+    </div>
+  </div>
+
+  <div class="panel" id="phase-confirm" style="display:none;">
+    <div class="panel-title">✅ 読み取り結果</div>
+    <div id="scoreTable"></div>
+    <button class="btn-submit" onclick="submitScores()" style="margin-top:15px;">この内容で送信する →</button>
+    <button onclick="location.reload()" style="width:100%; margin-top:10px; border:none; background:none; text-decoration:underline; font-size:12px; color:#666;">やり直す</button>
+  </div>
+
+  <div class="panel" id="phase-success" style="display:none; text-align:center;">
+    <div style="font-size:50px;">🎉</div>
+    <div style="font-weight:900; font-size:18px; margin-top:10px;">送信完了！</div>
+    <p style="font-size:13px; color:#666; margin-top:5px;">スプレッドシートを確認してください。</p>
+  </div>
+</div>
+
+<style> @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } </style>
+
+<script>
+const MY_LIFF_ID = '2009442207-s1e2B6Vn'; 
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw3ZEmsd8M4c1OlvLDCqgJR50psGZly5s4rImIU-XlqTRB8ktYeu8mmIKFbD77BvH_XKA/exec';
+let userId = 'GUEST';
+let uploadedFiles = [];
+let currentMode = null;
+let extractedData = null;
+
+async function initLiff() {
+  try {
+    await liff.init({ liffId: MY_LIFF_ID });
+    if (liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      userId = profile.userId;
+    } else { liff.login(); }
+  } catch (err) { console.error(err); }
+}
+window.onload = initLiff;
+
+function selectMode(mode) {
+  currentMode = mode;
+  document.getElementById('modeSelect').style.display = 'none';
+  document.getElementById('uploadSection').style.display = 'block';
+}
+
+function resizeAndConvert(file, maxSize) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width, height = img.height;
+        if (width > height && width > maxSize) { height *= maxSize / width; width = maxSize; }
+        else if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleFiles(files) {
+    const debug = document.getElementById('debugBox');
+    const log = (msg) => { if(debug) { debug.style.display = 'block'; debug.innerText = "診断: " + msg; } };
+    
+    log("処理開始...");
+    uploadedFiles = [];
+    const previewArea = document.getElementById('previewArea');
+    previewArea.innerHTML = '<div style="color:var(--orange); font-size:11px; padding:10px; text-align:center; grid-column:1/4;">処理中...</div>';
+    previewArea.style.display = 'grid';
+
+    for (let file of files) {
+        log(`${file.name} を読込中...`);
+        try {
+            const compressedData = await resizeAndConvert(file, 1200);
+            uploadedFiles.push({ base64: compressedData.split(',')[1], mediaType: "image/jpeg", name: file.name, previewUrl: compressedData });
+            await new Promise(r => setTimeout(r, 100));
+        } catch (err) { log(`❌エラー: ${err}`); return; }
+    }
+    log("最適化完了！");
+    setTimeout(() => { if(debug) debug.style.display = 'none'; }, 2000);
+    renderPreviews();
+}
+
+function renderPreviews() {
+  const previewArea = document.getElementById('previewArea');
+  previewArea.innerHTML = '';
+  uploadedFiles.forEach(f => {
+    const img = document.createElement('img');
+    img.src = f.previewUrl;
+    img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid #eee;';
+    previewArea.appendChild(img);
+  });
+  document.getElementById('analyzeBtn').disabled = uploadedFiles.length === 0;
+}
+
+// 【重要】解析はGAS経由で行うことでCORSを回避
+async function analyzeImage() {
+  document.getElementById('phase-upload').style.display = 'none';
+  document.getElementById('phase-loading').style.display = 'block';
+  
+  const payload = {
+    action: "analyze",
+    images: uploadedFiles,
+    mode: currentMode,
+    prompt: "成績表の点数、科目、偏差値を抽出しJSONで返してください。"
+  };
+
+  try {
+    const res = await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
+    extractedData = await res.json();
+    renderScoreTable(extractedData);
+    document.getElementById('phase-loading').style.display = 'none';
+    document.getElementById('phase-confirm').style.display = 'block';
+  } catch (e) {
+    alert("解析エラーが発生しました。");
+    location.reload();
+  }
+}
+
+function renderScoreTable(data) {
+  const table = document.getElementById('scoreTable');
+  table.innerHTML = `<div style="font-weight:bold; margin-bottom:10px;">${data.exam_name || '読取結果'}</div>`;
+  if (data.scores) {
+    data.scores.forEach(s => {
+      table.innerHTML += `<div class="score-row">
+        <div class="confidence-dot high"></div>
+        <div style="flex:1; font-weight:bold;">${s.subject}</div>
+        <div style="width:70px;"><input type="number" class="score-input" value="${s.score}"></div>
+      </div>`;
+    });
+  }
+}
+
+async function submitScores() {
+  document.getElementById('phase-confirm').style.display = 'none';
+  document.getElementById('phase-loading').style.display = 'block';
+
+  const payload = { student_id: userId, mode: currentMode, images: uploadedFiles, scores: extractedData?.scores };
+  try {
+    await fetch(GAS_ENDPOINT, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+    setTimeout(() => {
+        document.getElementById('phase-loading').style.display = 'none';
+        document.getElementById('phase-success').style.display = 'block';
+    }, 1500);
+  } catch (e) { alert("送信エラー"); }
+}
+</script>
+</body>
+</html>
