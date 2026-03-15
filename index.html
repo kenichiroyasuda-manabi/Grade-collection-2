@@ -184,6 +184,7 @@ function renderPreviews() {
 // 【重要】解析はGAS経由で行うことでCORSを回避
 // 修正後のコードイメージ
 async function analyzeImage() {
+  alert("ボタンが押されました！");
   // 1. ボタンを無効化して「解析中」画面へ
   document.getElementById('phase-upload').style.display = 'none';
   document.getElementById('phase-loading').style.display = 'block';
