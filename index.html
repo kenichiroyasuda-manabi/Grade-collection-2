@@ -10,13 +10,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
         body { background: var(--bg); color: #1A1A1A; padding: 15px; }
 
-        .steps { display: flex; gap: 8px; margin-bottom: 20px; }
-        .step-item { flex: 1; text-align: center; font-size: 10px; color: #ccc; transition: 0.3s; }
-        .step-bar { height: 4px; background: #ddd; border-radius: 2px; margin-top: 4px; overflow: hidden; position: relative; }
-        .step-bar::after { content: ""; position: absolute; left: 0; top: 0; height: 100%; width: 0; background: var(--orange); transition: 0.5s; }
-        .active .step-bar::after { width: 100%; }
-        .active { color: var(--orange); font-weight: bold; }
-
         .card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; }
         .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
         .btn-orange { background: var(--orange); color: #fff; }
@@ -37,15 +30,9 @@
 </head>
 <body>
 
-<div class="steps">
-    <div id="step-1" class="step-item active">1.写真撮影<div class="step-bar"></div></div>
-    <div id="step-2" class="step-item">2.AI解析中<div class="step-bar"></div></div>
-    <div id="step-3" class="step-item">3.確認・送信<div class="step-bar"></div></div>
-</div>
-
 <div id="phase-upload">
     <div class="card">
-        <h3 style="margin-bottom:15px;">成績表を撮影</h3>
+        <h3 style="margin-bottom:15px;">📸 成績表を撮影</h3>
         <div style="border: 2px dashed #FFDFC9; background: #FFF2EB; padding: 40px; text-align: center; border-radius: 12px;" onclick="document.getElementById('files').click()">
             <input type="file" id="files" multiple accept="image/*" style="display:none;" onchange="handleFiles(this.files)">
             <p style="font-size:30px;">📸</p>
@@ -56,20 +43,18 @@
     </div>
 </div>
 
-<div id="phase-loading" style="display:none; text-align:center;">
+<div id="phase-loading" style="display:none; text-align:center; padding:50px 0;">
     <div class="card">
         <div class="loader"></div>
-        <p style="font-weight:bold;">処理中...</p>
+        <p style="font-weight:bold;">AIが解析しています...</p>
     </div>
 </div>
 
 <div id="phase-confirm" style="display:none;">
     <div class="card">
         <h3 style="margin-bottom:10px;">✅ 内容を確認</h3>
-        <p style="font-size:11px; color:#999; margin-bottom:15px;">科目と点数に間違いがないか確認してください。</p>
-        
+        <p style="font-size:11px; color:#999; margin-bottom:15px;">科目名と点数に間違いがないか確認してください。</p>
         <div id="score-container"></div>
-        
         <button class="btn btn-add" onclick="addRow('', '', {})">＋ 科目を追加する</button>
         <button class="btn btn-orange" style="margin-top:25px;" onclick="finalSubmit()">この内容で保存する</button>
     </div>
@@ -84,18 +69,9 @@
 </div>
 
 <script>
-// --- 設定 (自分のURL等に書き換えてください) ---
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxaMPcjc-qmyfp67MQ9mUqND-1nK7fqJSCC11dmcvO40ut_zOrIJQgBgfAcJkalkBB2Jw/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyPIz7uhxZPxq1EAQEu0sgRg_Tr6CfeFbEnpHKl0gG-nJOvdJ_cDKF7uX_XHLnNRHuxvA/exec';
 const MY_LIFF_ID = 'liff.line.me/2009442207-s1e2B6Vn';
-    
-let userId = "USER_DEBUG", uploadedFiles = [], aiResult = null;
-
-function updateStepper(step) {
-    document.querySelectorAll('.step-item').forEach((el, idx) => {
-        if (idx < step) el.classList.add('active');
-        else el.classList.remove('active');
-    });
-}
+let userId = "DEBUG", uploadedFiles = [], aiResult = null;
 
 async function init() {
     await liff.init({ liffId: MY_LIFF_ID });
@@ -136,15 +112,12 @@ function resizeImage(file) {
 }
 
 async function startAnalysis() {
-    updateStepper(2);
     document.getElementById('phase-upload').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
-
     try {
         const res = await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify({ action: 'analyze', images: uploadedFiles }) });
         aiResult = await res.json();
         renderConfirm(aiResult);
-        updateStepper(3);
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-confirm').style.display = 'block';
     } catch(e) { alert("エラー"); location.reload(); }
@@ -154,8 +127,7 @@ function addRow(subject, score, metadata) {
     const container = document.getElementById('score-container');
     const row = document.createElement('div');
     row.className = 'score-row';
-    // 詳細データを隠し属性(dataset)に保存
-    row.dataset.metadata = JSON.stringify(metadata);
+    row.dataset.metadata = JSON.stringify(metadata); // 他のデータを隠し持つ
     row.innerHTML = `
         <button class="btn-del" onclick="this.parentElement.remove()">×</button>
         <input type="text" class="input-edit input-subject" value="${subject}" placeholder="科目名">
@@ -168,13 +140,7 @@ function renderConfirm(data) {
     const container = document.getElementById('score-container');
     container.innerHTML = '';
     (data.scores || []).forEach(s => {
-        const meta = {
-            max_score: s.max_score,
-            deviation: s.deviation,
-            level: s.level,
-            average_score: s.average_score,
-            rank: s.rank_in_school
-        };
+        const meta = { max_score: s.max_score, deviation: s.deviation, level: s.level, average_score: s.average_score, rank_in_school: s.rank_in_school };
         addRow(s.subject, s.score, meta);
     });
 }
@@ -182,35 +148,17 @@ function renderConfirm(data) {
 async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
-
     const finalScores = [];
     document.querySelectorAll('.score-row').forEach(row => {
         const sub = row.querySelector('.input-subject').value;
         const sco = row.querySelector('.input-score').value;
-        const meta = JSON.parse(row.dataset.metadata || '{}'); 
-        
-        if (sub) {
-            finalScores.push({
-                subject: sub,
-                score: parseInt(sco) || 0,
-                ...meta 
-            });
-        }
+        const meta = JSON.parse(row.dataset.metadata || '{}');
+        if (sub) { finalScores.push({ subject: sub, score: parseInt(sco) || 0, ...meta }); }
     });
-
-    const payload = {
-        student_id: userId,
-        images: uploadedFiles,
-        exam_name: aiResult.exam_name,
-        exam_date: aiResult.exam_date,
-        scores: finalScores
-    };
-
-    try {
-        await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
-        document.getElementById('phase-loading').style.display = 'none';
-        document.getElementById('phase-success').style.display = 'block';
-    } catch(e) { alert("保存失敗"); location.reload(); }
+    const payload = { student_id: userId, images: uploadedFiles, exam_name: aiResult.exam_name, exam_date: aiResult.exam_date, scores: finalScores };
+    await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
+    document.getElementById('phase-loading').style.display = 'none';
+    document.getElementById('phase-success').style.display = 'block';
 }
 </script>
 </body>
