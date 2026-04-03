@@ -10,17 +10,25 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
         body { background: var(--bg); color: #1A1A1A; padding: 15px; }
 
+        /* ステップバー */
+        .steps { display: flex; gap: 8px; margin-bottom: 25px; }
+        .step-item { flex: 1; text-align: center; font-size: 10px; color: #ccc; transition: 0.3s; }
+        .step-bar { height: 4px; background: #ddd; border-radius: 2px; margin-top: 4px; overflow: hidden; position: relative; }
+        .step-bar::after { content: ""; position: absolute; left: 0; top: 0; height: 100%; width: 0; background: var(--orange); transition: 0.5s; }
+        .active .step-bar::after { width: 100%; }
+        .active { color: var(--orange); font-weight: bold; }
+
         .card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; }
         .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
         .btn-orange { background: var(--orange); color: #fff; }
         .btn-orange:disabled { background: #ddd; }
-
+        
         /* モード選択 */
         .mode-select { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-        .mode-card { border: 2px solid #eee; border-radius: 12px; padding: 20px 10px; text-align: center; cursor: pointer; background: #fff; }
+        .mode-card { border: 2px solid #eee; border-radius: 12px; padding: 20px 10px; text-align: center; cursor: pointer; background: #fff; transition: 0.2s; }
         .mode-card.active { border-color: var(--orange); background: #FFF9F5; }
-        .mode-card p { font-size: 11px; color: #999; margin-top: 5px; }
-        .mode-icon { font-size: 30px; margin-bottom: 8px; display: block; }
+        .mode-icon { font-size: 32px; display: block; margin-bottom: 5px; }
+        .mode-card p { font-size: 10px; color: #999; margin-top: 5px; line-height: 1.3; }
 
         /* スコア行 */
         .score-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
@@ -29,81 +37,89 @@
         .input-score { width: 75px; text-align: center; }
         .btn-del { background: #FEE; color: var(--red); border: none; border-radius: 8px; width: 32px; height: 32px; font-weight: bold; font-size: 18px; cursor: pointer; }
 
-        .loader { width: 35px; height: 35px; border: 4px solid #f3f3f3; border-top: 4px solid var(--orange); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+        .loader { width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid var(--orange); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        #previewArea img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; margin-right: 5px; border: 1px solid #eee; }
+        #previewArea img { width: 55px; height: 55px; object-fit: cover; border-radius: 6px; margin-right: 6px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
 
-<!-- 1. モード選択 -->
+<div class="steps">
+    <div id="step-1" class="step-item active">1.モード選択<div class="step-bar"></div></div>
+    <div id="step-2" class="step-item">2.写真撮影<div class="step-bar"></div></div>
+    <div id="step-3" class="step-item">3.AI解析中<div class="step-bar"></div></div>
+    <div id="step-4" class="step-item">4.確認・送信<div class="step-bar"></div></div>
+</div>
+
 <div id="phase-mode">
     <div class="card" style="text-align:center;">
-        <h2 style="font-size:18px; margin-bottom:15px;">成績の種類を選択</h2>
+        <h2 style="font-size:18px; margin-bottom:20px;">登録する成績を選択</h2>
         <div class="mode-select">
             <div class="mode-card" onclick="selectMode('模試')">
                 <span class="mode-icon">📝</span>
                 <strong>模試</strong>
-                <p>偏差値・判定も抽出</p>
+                <p>全統・進研など<br>偏差値・判定あり</p>
             </div>
             <div class="mode-card" onclick="selectMode('定期テスト')">
                 <span class="mode-icon">🏫</span>
                 <strong>定期テスト</strong>
-                <p>科目・得点を抽出</p>
+                <p>中間・期末など<br>科目・得点のみ</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 2. アップロード -->
 <div id="phase-upload" style="display:none;">
     <div class="card">
-        <h3 id="mode-display" style="color:var(--orange); margin-bottom:15px;"></h3>
+        <h3 id="mode-title" style="margin-bottom:15px; color:var(--orange); font-size:18px;"></h3>
         <div style="border: 2px dashed #FFDFC9; background: #FFF2EB; padding: 40px; text-align: center; border-radius: 12px;" onclick="document.getElementById('files').click()">
             <input type="file" id="files" multiple accept="image/*" style="display:none;" onchange="handleFiles(this.files)">
             <p style="font-size:35px; margin-bottom:10px;">📸</p>
             <p style="color:var(--orange); font-weight:bold;">写真を撮影（複数枚可）</p>
         </div>
         <div id="previewArea" style="display:flex; margin-top:15px; overflow-x:auto;"></div>
-        <button id="btn-analyze" class="btn btn-orange" style="margin-top:20px;" disabled onclick="startAnalysis()">AI解析を開始する</button>
+        <button id="btn-analyze" class="btn btn-orange" style="margin-top:25px;" disabled onclick="startAnalysis()">AI解析を開始する</button>
         <button class="btn" style="background:none; color:#999; font-size:13px; margin-top:10px;" onclick="location.reload()">← モード選択に戻る</button>
     </div>
 </div>
 
-<!-- 3. 解析中 -->
 <div id="phase-loading" style="display:none; text-align:center;">
-    <div class="card">
+    <div class="card" style="padding:50px 20px;">
         <div class="loader"></div>
-        <p id="load-msg" style="font-weight:bold;">AIが解析しています...</p>
+        <p id="load-msg" style="font-weight:bold; color:var(--orange);">AIが解析しています...</p>
     </div>
 </div>
 
-<!-- 4. 確認修正 -->
 <div id="phase-confirm" style="display:none;">
     <div class="card">
         <h3 style="margin-bottom:10px;">✅ 内容を確認</h3>
-        <p style="font-size:11px; color:#999; margin-bottom:15px;">科目と点数を修正・追加できます。</p>
+        <p style="font-size:11px; color:#999; margin-bottom:15px;">科目と点数を確認してください。</p>
         <div id="score-container"></div>
-        <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:15px 0;" onclick="addRow('', '', {})">＋ 科目を追加する</button>
+        <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:15px 0; font-size:14px;" onclick="addRow('', '', {})">＋ 科目を追加する</button>
         <button class="btn btn-orange" onclick="finalSubmit()">この内容で保存する</button>
     </div>
 </div>
 
-<!-- 5. 完了 -->
-<div id="phase-success" style="display:none; text-align:center;">
+<div id="phase-success" style="display:none; text-align:center; padding:40px 0;">
     <div class="card">
-        <p style="font-size:50px;">🎉</p>
-        <p style="font-weight:bold; margin-top:15px;">送信が完了しました！</p>
-        <button class="btn btn-orange" style="margin-top:20px;" onclick="location.reload()">続けて登録する</button>
+        <p style="font-size:60px;">🎉</p>
+        <p style="font-weight:bold; font-size:20px; margin-top:15px;">送信完了しました！</p>
+        <button class="btn btn-orange" style="margin-top:30px;" onclick="location.reload()">続けて登録する</button>
     </div>
 </div>
 
 <script>
-// --- 設定 (自分のURL等に書き換えてください) ---
 const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzgeZ3sidfghEVMWsRZ8wkkwUi-dra9UoPt65FzoRxRTxrWmyunE15U7PW_dIXiCkqkyw/exec';
 const MY_LIFF_ID = 'liff.line.me/2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "";
+
+function updateStepper(step) {
+    document.querySelectorAll('.step-item').forEach((el, idx) => {
+        if (idx < step) el.classList.add('active');
+        else el.classList.remove('active');
+    });
+}
 
 async function init() {
     await liff.init({ liffId: MY_LIFF_ID });
@@ -114,9 +130,10 @@ init();
 
 function selectMode(mode) {
     selectedMode = mode;
+    updateStepper(2);
     document.getElementById('phase-mode').style.display = 'none';
     document.getElementById('phase-upload').style.display = 'block';
-    document.getElementById('mode-display').innerText = mode + "を撮影・選択";
+    document.getElementById('mode-title').innerText = mode + "を撮影";
 }
 
 async function handleFiles(files) {
@@ -151,6 +168,7 @@ function resizeImage(file) {
 }
 
 async function startAnalysis() {
+    updateStepper(3);
     document.getElementById('phase-upload').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
     try {
@@ -160,16 +178,17 @@ async function startAnalysis() {
         });
         aiResult = await res.json();
         renderConfirm(aiResult);
+        updateStepper(4);
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-confirm').style.display = 'block';
-    } catch(e) { alert("解析エラーが発生しました。"); location.reload(); }
+    } catch(e) { alert("エラーが発生しました。"); location.reload(); }
 }
 
 function addRow(subject, score, metadata) {
     const container = document.getElementById('score-container');
     const row = document.createElement('div');
     row.className = 'score-row';
-    row.dataset.metadata = JSON.stringify(metadata); // 偏差値などを隠し属性に保存
+    row.dataset.metadata = JSON.stringify(metadata);
     row.innerHTML = `
         <button class="btn-del" onclick="this.parentElement.remove()">×</button>
         <input type="text" class="input-edit input-subject" value="${subject}" placeholder="科目名">
@@ -190,8 +209,6 @@ function renderConfirm(data) {
 async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
-    document.getElementById('load-msg').innerText = "データを保存しています...";
-
     const finalScores = [];
     document.querySelectorAll('.score-row').forEach(row => {
         const sub = row.querySelector('.input-subject').value;
@@ -199,21 +216,10 @@ async function finalSubmit() {
         const meta = JSON.parse(row.dataset.metadata || '{}');
         if (sub) { finalScores.push({ subject: sub, score: parseInt(sco) || 0, ...meta }); }
     });
-
-    const payload = {
-        student_id: userId,
-        mode: selectedMode,
-        images: uploadedFiles,
-        exam_name: aiResult.exam_name,
-        exam_date: aiResult.exam_date,
-        scores: finalScores
-    };
-
-    try {
-        await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
-        document.getElementById('phase-loading').style.display = 'none';
-        document.getElementById('phase-success').style.display = 'block';
-    } catch(e) { alert("保存に失敗しました"); location.reload(); }
+    const payload = { student_id: userId, mode: selectedMode, images: uploadedFiles, exam_name: aiResult.exam_name, exam_date: aiResult.exam_date, scores: finalScores };
+    await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
+    document.getElementById('phase-loading').style.display = 'none';
+    document.getElementById('phase-success').style.display = 'block';
 }
 </script>
 </body>
