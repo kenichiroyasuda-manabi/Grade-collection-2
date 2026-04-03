@@ -171,6 +171,7 @@ async function startAnalysis() {
     updateStepper(3);
     document.getElementById('phase-upload').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
+    document.getElementById('load-msg').innerText = "AIが解析しています...";
     try {
         const res = await fetch(GAS_ENDPOINT, { 
             method: 'POST', 
@@ -209,6 +210,7 @@ function renderConfirm(data) {
 async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
+    document.getElementById('load-msg').innerText = "データを保存しています...";
     const finalScores = [];
     document.querySelectorAll('.score-row').forEach(row => {
         const sub = row.querySelector('.input-subject').value;
