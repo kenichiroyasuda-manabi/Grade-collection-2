@@ -210,7 +210,7 @@ function renderConfirm(data) {
 async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
-    document.getElementById('load-msg').innerText = "データを保存しています...";
+    document.getElementById('load-msg').innerText = "データを送信しています...";
     const finalScores = [];
     document.querySelectorAll('.score-row').forEach(row => {
         const sub = row.querySelector('.input-subject').value;
