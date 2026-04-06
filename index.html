@@ -189,7 +189,12 @@ function addRow(subject, score, metadata) {
     const container = document.getElementById('score-container');
     const row = document.createElement('div');
     row.className = 'score-row';
+    
+    // 【追加】初期値を比較用に保存
+    row.dataset.origSubject = subject;
+    row.dataset.origScore = score;
     row.dataset.metadata = JSON.stringify(metadata);
+
     row.innerHTML = `
         <button class="btn-del" onclick="this.parentElement.remove()">×</button>
         <input type="text" class="input-edit input-subject" value="${subject}" placeholder="科目名">
@@ -216,12 +221,20 @@ async function finalSubmit() {
         const sub = row.querySelector('.input-subject').value;
         const sco = row.querySelector('.input-score').value;
         const meta = JSON.parse(row.dataset.metadata || '{}');
-        if (sub) { finalScores.push({ subject: sub, score: parseInt(sco) || 0, ...meta }); }
+
+        // 【追加】初期値と現在の値を比較してフラグを作成
+        const isEdited = (sub !== row.dataset.origSubject || sco !== row.dataset.origScore);
+
+        if (sub) { 
+            finalScores.push({ 
+                subject: sub, 
+                score: parseInt(sco) || 0, 
+                is_edited: isEdited, // ★これを追加
+                ...meta 
+            }); 
+        }
     });
-    const payload = { student_id: userId, mode: selectedMode, images: uploadedFiles, exam_name: aiResult.exam_name, exam_date: aiResult.exam_date, scores: finalScores };
-    await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
-    document.getElementById('phase-loading').style.display = 'none';
-    document.getElementById('phase-success').style.display = 'block';
+    // ...以下、payload作成と送信処理
 }
 </script>
 </body>
