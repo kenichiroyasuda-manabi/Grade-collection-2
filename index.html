@@ -103,7 +103,7 @@
 <div id="phase-success" style="display:none; text-align:center; padding:40px 0;">
     <div class="card">
         <p style="font-size:60px;">🎉</p>
-        <p style="font-weight:bold; font-size:20px; margin-top:15px;">送信完了しました！</p>
+        <p style="font-weight:bold; font-size:20px; margin-top:15px;">保存完了しました！</p>
         <button class="btn btn-orange" style="margin-top:30px;" onclick="location.reload()">続けて登録する</button>
     </div>
 </div>
@@ -156,10 +156,15 @@ function resizeImage(file) {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let w = img.width, h = img.height;
-                if (w > 1600) { h *= 1600/w; w = 1600; }
+                // ★1600から1400へ微調整（これだけで容量がかなり減ります）
+                const max = 1400; 
+                if (w > h && w > max) { h *= max / w; w = max; }
+                else if (h > max) { w *= max / h; h = max; }
+                
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                res(canvas.toDataURL('image/jpeg', 0.8));
+                // ★画質を0.75〜0.8に。0.9以上はデータ量が激増するため避ける
+                res(canvas.toDataURL('image/jpeg', 0.75)); 
             };
             img.src = e.target.result;
         };
