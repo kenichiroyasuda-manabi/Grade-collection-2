@@ -110,10 +110,10 @@
 
 <script>
 const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxi9gjU0q9sFiCTUvqVf-7b7TOphtuw6kALIY1KyJ8ymcSlTBVE0qz8nIzv0BtSD8RKUQ/exec';
-const MY_LIFF_ID = 'liff.line.me/2009442207-s1e2B6Vn';
+const MY_LIFF_ID = '2009442207-s1e2B6Vn'; // IDだけに修正
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "";
-
+    
 function updateStepper(step) {
     document.querySelectorAll('.step-item').forEach((el, idx) => {
         if (idx < step) el.classList.add('active');
@@ -176,70 +176,67 @@ async function startAnalysis() {
     updateStepper(3);
     document.getElementById('phase-upload').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
-    document.getElementById('load-msg').innerText = "AIが解析しています...";
+    document.getElementById('load-msg').innerText = "画像を送信・AI解析中...";
+    
     try {
         const res = await fetch(GAS_ENDPOINT, { 
             method: 'POST', 
             body: JSON.stringify({ action: 'analyze', mode: selectedMode, images: uploadedFiles }) 
         });
         aiResult = await res.json();
+        
+        // ★重要: GAS側から返ってきた画像URLをaiResultに保持しておく
         renderConfirm(aiResult);
+        
         updateStepper(4);
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-confirm').style.display = 'block';
-    } catch(e) { alert("エラーが発生しました。"); location.reload(); }
-}
-
-function addRow(subject, score, metadata) {
-    const container = document.getElementById('score-container');
-    const row = document.createElement('div');
-    row.className = 'score-row';
-    
-    // 【追加】初期値を比較用に保存
-    row.dataset.origSubject = subject;
-    row.dataset.origScore = score;
-    row.dataset.metadata = JSON.stringify(metadata);
-
-    row.innerHTML = `
-        <button class="btn-del" onclick="this.parentElement.remove()">×</button>
-        <input type="text" class="input-edit input-subject" value="${subject}" placeholder="科目名">
-        <input type="number" class="input-edit input-score" value="${score}" placeholder="点数">
-    `;
-    container.appendChild(row);
-}
-
-function renderConfirm(data) {
-    const container = document.getElementById('score-container');
-    container.innerHTML = '';
-    (data.scores || []).forEach(s => {
-        const meta = { max_score: s.max_score, deviation: s.deviation, level: s.level, average_score: s.average_score, rank_in_school: s.rank_in_school };
-        addRow(s.subject, s.score, meta);
-    });
+    } catch(e) { 
+        alert("解析エラー: " + e.message); 
+        location.reload(); 
+    }
 }
 
 async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
-    document.getElementById('load-msg').innerText = "データを送信しています...";
+    document.getElementById('load-msg').innerText = "結果を保存しています...";
+
     const finalScores = [];
     document.querySelectorAll('.score-row').forEach(row => {
         const sub = row.querySelector('.input-subject').value;
         const sco = row.querySelector('.input-score').value;
         const meta = JSON.parse(row.dataset.metadata || '{}');
-
-        // 【追加】初期値と現在の値を比較してフラグを作成
         const isEdited = (sub !== row.dataset.origSubject || sco !== row.dataset.origScore);
 
         if (sub) { 
             finalScores.push({ 
                 subject: sub, 
                 score: parseInt(sco) || 0, 
-                is_edited: isEdited, // ★これを追加
+                is_edited: isEdited,
                 ...meta 
             }); 
         }
     });
-    // ...以下、payload作成と送信処理
+
+    // ★軽量化の肝: ここで images を送らず、解析時に保存した imageUrls を送る
+    const payload = { 
+        student_id: userId, 
+        mode: selectedMode, 
+        exam_name: aiResult.exam_name, 
+        exam_date: aiResult.exam_date, 
+        scores: finalScores,
+        image_urls: aiResult.imageUrls // 解析時に保存済みのURL
+    };
+
+    try {
+        await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
+        document.getElementById('phase-loading').style.display = 'none';
+        document.getElementById('phase-success').style.display = 'block';
+    } catch(e) { 
+        alert("保存エラー: " + e.message);
+        document.getElementById('phase-confirm').style.display = 'block';
+    }
 }
 </script>
 </body>
