@@ -109,7 +109,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzEBrQizlYoUbewhBazbbioFfvZ3ZYkYrPWyvidy5R1PRrj_WhfK40QsW9nNx7ByPOMUw/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbylM-DDlsz-wEHajQCOT-WHoShNHHbZmr55m6G-1OfZLS7qZFx0LClSYSCmDM7E2dj1xA/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn'; // IDだけに修正
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "";
@@ -181,22 +181,33 @@ async function startAnalysis() {
     try {
         const res = await fetch(GAS_ENDPOINT, { 
             method: 'POST', 
-            body: JSON.stringify({ action: 'analyze', mode: selectedMode, images: uploadedFiles }) 
+            // ★ student_id: userId を追加しました
+            body: JSON.stringify({ 
+                action: 'analyze', 
+                mode: selectedMode, 
+                images: uploadedFiles,
+                student_id: userId 
+            }) 
         });
-        aiResult = await res.json();
         
-        // ★重要: GAS側から返ってきた画像URLをaiResultに保持しておく
+        const data = await res.json();
+        
+        // GAS側でエラーが起きた場合
+        if (data.status === "error") {
+            throw new Error(data.message);
+        }
+        
+        aiResult = data;
         renderConfirm(aiResult);
         
         updateStepper(4);
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-confirm').style.display = 'block';
     } catch(e) { 
-        alert("解析エラー: " + e.message); 
+        alert("解析エラーが発生しました。時間を置いてやり直してください。\n詳細: " + e.message); 
         location.reload(); 
     }
 }
-
 async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
