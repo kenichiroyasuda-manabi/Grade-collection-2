@@ -156,10 +156,10 @@ function resizeImage(file) {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let w = img.width, h = img.height;
-                if (w > 1200) { h *= 1200/w; w = 1200; }
+                if (w > 1600) { h *= 1600/w; w = 1600; }
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                res(canvas.toDataURL('image/jpeg', 0.8));
+                res(canvas.toDataURL('image/jpeg', 0.95));
             };
             img.src = e.target.result;
         };
