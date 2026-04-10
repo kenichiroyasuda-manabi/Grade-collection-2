@@ -208,6 +208,29 @@ async function startAnalysis() {
         location.reload(); 
     }
 }
+// AIから届いたデータを、確認画面の入力欄に書き出す関数
+function renderConfirm(data) {
+    const container = document.getElementById('score-container');
+    container.innerHTML = ''; // 一旦中身を空にする
+    
+    // AIが解析したスコア（科目や点数）のリストを一つずつ行に追加する
+    if (data.scores && data.scores.length > 0) {
+        data.scores.forEach(s => {
+            // 他の付加情報（偏差値や平均点など）をmetaにまとめて保存
+            const meta = { 
+                max_score: s.max_score, 
+                deviation: s.deviation, 
+                level: s.level, 
+                average_score: s.average_score, 
+                rank_in_school: s.rank_in_school 
+            };
+            addRow(s.subject, s.score, meta);
+        });
+    } else {
+        // もしAIが科目を一つも読み取れなかった場合、空の行を1つ出す
+        addRow('', '', {});
+    }
+}    
 async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
