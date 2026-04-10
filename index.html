@@ -230,6 +230,25 @@ function renderConfirm(data) {
         // もしAIが科目を一つも読み取れなかった場合、空の行を1つ出す
         addRow('', '', {});
     }
+} 
+// 確認画面に「科目・点数」の入力行を新しく作る関数
+function addRow(subject, score, metadata) {
+    const container = document.getElementById('score-container');
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    
+    // 修正フラグ判定のために、AIが最初に出した値を「初期値」として覚えさせる
+    row.dataset.origSubject = subject;
+    row.dataset.origScore = score;
+    // 偏差値などの細かいデータを隠しデータとして持っておく
+    row.dataset.metadata = JSON.stringify(metadata || {});
+
+    row.innerHTML = `
+        <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+        <input type="text" class="input-edit input-subject" value="${subject}" placeholder="科目名">
+        <input type="number" class="input-edit input-score" value="${score}" placeholder="点数">
+    `;
+    container.appendChild(row);
 }    
 async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
