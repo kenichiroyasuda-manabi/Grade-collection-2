@@ -109,7 +109,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxjvayLjtP20tcEbsaU4BQ4YNJKZK1EGF7HkoTnIbBpDBsZIA47eGte9O3yHvMvFtbqDw/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyfQL430gblraHod1XaFHwe7rXod6qe0EdE_uNAt5UjZ0ceMp-FdBeoy9c7cUsHxtkgsA/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn'; // IDだけに修正
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "";
@@ -273,13 +273,15 @@ async function finalSubmit() {
     });
 
     // ★軽量化の肝: ここで images を送らず、解析時に保存した imageUrls を送る
-    const payload = { 
+  const payload = { 
         student_id: userId, 
         mode: selectedMode, 
         exam_name: aiResult.exam_name, 
         exam_date: aiResult.exam_date, 
         scores: finalScores,
-        image_urls: aiResult.imageUrls // 解析時に保存済みのURL
+        //AIが解析した志望校判定をそのまま引き継ぐ
+        target_schools: aiResult.target_schools, 
+        image_urls: aiResult.imageUrls
     };
 
     try {
