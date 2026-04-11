@@ -48,7 +48,7 @@
     <div id="step-1" class="step-item active">1.モード選択<div class="step-bar"></div></div>
     <div id="step-2" class="step-item">2.写真撮影<div class="step-bar"></div></div>
     <div id="step-3" class="step-item">3.AI解析中<div class="step-bar"></div></div>
-    <div id="step-4" class="step-item">4.確認・送信<div class="step-bar"></div></div>
+    <div id="step-4" class="step-item">4.確認・保存<div class="step-bar"></div></div>
 </div>
 
 <div id="phase-mode">
@@ -110,7 +110,7 @@
 
 <script>
 const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyxXk4DuAlBeaaSJyiK-gxtTZpG0UJ8rPkLGH_ZlcM-AVy0HghLGpuMoZakhthrs4PA/exec';
-const MY_LIFF_ID = '2009442207-s1e2B6Vn'; // IDだけに修正
+const MY_LIFF_ID = '2009442207-s1e2B6Vn'; 
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "";
     
@@ -157,7 +157,7 @@ function resizeImage(file) {
                 const canvas = document.createElement('canvas');
                 let w = img.width, h = img.height;
                 // ★1600から1400へ微調整（これだけで容量がかなり減ります）
-                const max = 1400; 
+                const max = 1600; 
                 if (w > h && w > max) { h *= max / w; w = max; }
                 else if (h > max) { w *= max / h; h = max; }
                 
