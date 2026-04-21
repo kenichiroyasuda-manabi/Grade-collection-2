@@ -6,7 +6,7 @@
     <title>トウコベ成績収集</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { --orange: #FF6920; --bg: #F5F8FA; --border: #E8EEF2; --red: #ff4d4d; }
+        :root { --orange: #FF6920; --bg: #F5F8FA; --border: #E8EEF2; --red: #ff4d4d; --green: #47A779; --brown: #A07137; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
         body { background: var(--bg); color: #1A1A1A; padding: 15px; }
 
@@ -30,16 +30,32 @@
         .mode-icon { font-size: 32px; display: block; margin-bottom: 5px; }
         .mode-card p { font-size: 10px; color: #999; margin-top: 5px; line-height: 1.3; }
 
-        /* スコア行 */
-        .score-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-        .input-edit { border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 14px; background: #f9f9f9; outline: none; }
-        .input-subject { flex: 1; min-width: 0; font-weight: bold; }
-        .input-score { width: 75px; text-align: center; }
-        .btn-del { background: #FEE; color: var(--red); border: none; border-radius: 8px; width: 32px; height: 32px; font-weight: bold; font-size: 18px; cursor: pointer; }
-
+        /* ローダー */
         .loader { width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid var(--orange); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
         #previewArea img { width: 55px; height: 55px; object-fit: cover; border-radius: 6px; margin-right: 6px; border: 1px solid #ddd; }
+
+        /* ✅ 確認画面専用のリッチUI CSS */
+        #score-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+        .score-card { background: #fff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: start; }
+        .card-delete { background: var(--green); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; position: absolute; left: 10px; top: 18px; }
+        .card-content { display: flex; flex-direction: column; gap: 8px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .input-subject-rich { border: none; font-weight: bold; font-size: 14px; color: #1A1A1A; outline: none; width: 100%; padding: 0; background: none; }
+        .score-input-area { display: flex; align-items: center; color: #999; font-size: 13px; gap: 2px; }
+        .input-score-rich { border: none; font-weight: bold; font-size: 20px; color: #1A1A1A; outline: none; text-align: right; width: 50px; padding: 0; background: none; }
+        .input-max-score-rich { border: none; font-size: 13px; color: #ccc; outline: none; width: 30px; padding: 0; background: none; text-align: left; }
+        .card-details { display: flex; gap: 8px; align-items: center; font-size: 10px; }
+        .label-badge { background: #E4F1E9; color: var(--green); padding: 3px 6px; border-radius: 4px; font-weight: bold; }
+        .deviation-value, .average-score-value { color: var(--brown); font-weight: bold; margin-left: -4px; }
+        .level-badge { font-weight: bold; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .level-badge.S { background: #C7C2EE; color: #5149B4; }
+        .level-badge.A { background: #FFEED9; color: var(--brown); }
+        .level-badge.B { background: #E4F1E9; color: var(--green); }
+        .total-score-card { background: #FFEED9; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .total-score-card .label { font-weight: bold; font-size: 14px; }
+        .total-score-card .value { font-weight: bold; font-size: 20px; color: var(--brown); }
+        .warning-alert-card { background: #FFDFC9; border-radius: 12px; padding: 12px; display: grid; grid-template-columns: 24px 1fr; gap: 8px; align-items: start; border: 1px solid #FFDFC9; }
     </style>
 </head>
 <body>
@@ -69,17 +85,35 @@
     </div>
 </div>
 
+<div id="phase-upload" style="display:none;">
+    <div class="card">
+        <h3 id="mode-title" style="margin-bottom:15px; color:var(--orange); font-size:18px;"></h3>
+        <div style="border: 2px dashed #FFDFC9; background: #FFF2EB; padding: 40px; text-align: center; border-radius: 12px;" onclick="document.getElementById('files').click()">
+            <input type="file" id="files" multiple accept="image/*" style="display:none;" onchange="handleFiles(this.files)">
+            <p style="font-size:35px; margin-bottom:10px;">📸</p>
+            <p style="color:var(--orange); font-weight:bold;">写真を撮影（複数枚可）</p>
+        </div>
+        <div id="previewArea" style="display:flex; margin-top:15px; overflow-x:auto;"></div>
+        <button id="btn-analyze" class="btn btn-orange" style="margin-top:25px;" disabled onclick="startAnalysis()">AI解析を開始する</button>
+        <button class="btn" style="background:none; color:#999; font-size:13px; margin-top:10px;" onclick="location.reload()">← モード選択に戻る</button>
+    </div>
+</div>
+
+<div id="phase-loading" style="display:none; text-align:center;">
+    <div class="card" style="padding:50px 20px;">
+        <div class="loader"></div>
+        <p id="load-msg" style="font-weight:bold; color:var(--orange);">AIが解析しています...</p>
+    </div>
+</div>
+
 <div id="phase-confirm" style="display:none;">
     <div class="card" style="background: none; box-shadow: none; padding: 0;">
         <h3 style="margin-bottom:15px; font-size: 18px;">✅ 内容を確認</h3>
-        
         <div id="score-container"></div>
-        
         <div class="total-score-card">
             <span class="label">合計点</span>
-            <span class="value" id="total-score-value">???点</span>
+            <span class="value" id="total-score-value">0点</span>
         </div>
-
         <div class="warning-alert-card">
             <span class="alert-icon">⚠️</span>
             <p style="font-size: 11px; color:#A07137; line-height: 1.4;">
@@ -87,9 +121,8 @@
                 修正後に「送信」してください。
             </p>
         </div>
-
         <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:15px 0; font-size:14px; border-radius: 8px;" onclick="addBlankRow()">＋ 科目を追加する</button>
-        <button class="btn btn-orange" style="border-radius: 8px; background-color: #A07137;" onclick="finalSubmit()">この内容で送信する →</button>
+        <button class="btn btn-orange" style="border-radius: 8px; background-color: var(--brown);" onclick="finalSubmit()">この内容で送信する →</button>
     </div>
 </div>
 
@@ -100,64 +133,6 @@
         <button class="btn btn-orange" style="margin-top:30px;" onclick="location.reload()">続けて登録する</button>
     </div>
 </div>
-
-<style>
-    /* ✅ 確認画面専用の新しいCSS */
-    #score-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
-    
-    /* 科目ごとのリッチなカード */
-    .score-card { background: #fff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: start; }
-    
-    /* 削除ボタン（スクリーンショットの緑のドット風に） */
-    .card-delete { background: #47A779; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; position: absolute; left: 10px; top: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    
-    /* カードの右側部分 */
-    .card-content { display: flex; flex-direction: column; gap: 8px; }
-    
-    /* 科目名と点数/満点 */
-    .card-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    
-    /* 科目名の入力欄（修正可能） */
-    .input-subject-rich { border: none; font-weight: bold; font-size: 14px; color: #1A1A1A; outline: none; width: 100%; padding: 0; background: none; }
-    
-    /* 点数/満点エリア */
-    .score-input-area { display: flex; align-items: center; color: #999; font-size: 13px; gap: 2px; }
-    
-    /* 点数の入力欄（修正可能） */
-    .input-score-rich { border: none; font-weight: bold; font-size: 20px; color: #1A1A1A; outline: none; text-align: right; width: 50px; padding: 0; background: none; }
-    .input-score-rich::placeholder { color: #ccc; }
-    
-    /* 満点入力欄 */
-    .input-max-score-rich { border: none; font-size: 13px; color: #ccc; outline: none; width: 30px; padding: 0; background: none; text-align: left; }
-    
-    /* 偏差値・評価・平均点エリア */
-    .card-details { display: flex; gap: 8px; align-items: center; font-size: 10px; }
-    
-    /* 偏差値・平均点ラベル */
-    .label-badge { background: #E4F1E9; color: #47A779; padding: 3px 6px; border-radius: 4px; font-weight: bold; }
-    .label-badge.平均点 { background: #E4F1E9; color: #47A779; }
-    .label-badge.偏差値 { background: #E4F1E9; color: #47A779; }
-    
-    /* 偏差値・平均点の値（表示のみ） */
-    .deviation-value, .average-score-value { color: #A07137; font-weight: bold; margin-left: -4px; }
-    
-    /* 成績評価バッジ (S, A, B...) */
-    .level-badge { font-weight: bold; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .level-badge.S { background: #C7C2EE; color: #5149B4; }
-    .level-badge.A { background: #FFEED9; color: #A07137; }
-    .level-badge.B { background: #E4F1E9; color: #47A779; }
-    /* その他の評価バッジも同様に追加可能 */
-
-    /* 合計点カード */
-    .total-score-card { background: #FFEED9; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .total-score-card .label { font-weight: bold; font-size: 14px; color: #1A1A1A; }
-    .total-score-card .value { font-weight: bold; font-size: 20px; color: #A07137; }
-
-    /* 注意喚起アラートカード */
-    .warning-alert-card { background: #FFDFC9; border-radius: 12px; padding: 12px; display: grid; grid-template-columns: 24px 1fr; gap: 8px; align-items: start; border: 1px solid #FFDFC9; }
-    .warning-alert-card .alert-icon { font-size: 16px; }
-
-</style>
 
 <script>
 const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyxXk4DuAlBeaaSJyiK-gxtTZpG0UJ8rPkLGH_ZlcM-AVy0HghLGpuMoZakhthrs4PA/exec';
@@ -207,14 +182,11 @@ function resizeImage(file) {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let w = img.width, h = img.height;
-                // ★AI精度向上のため、解像度を少し上げる (1600→2000)
                 const max = 2000; 
                 if (w > h && w > max) { h *= max / w; w = max; }
                 else if (h > max) { w *= max / h; h = max; }
-                
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                // ★画質も少し上げる (0.75→0.8)
                 res(canvas.toDataURL('image/jpeg', 0.8)); 
             };
             img.src = e.target.result;
@@ -227,7 +199,6 @@ async function startAnalysis() {
     updateStepper(3);
     document.getElementById('phase-upload').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
-    document.getElementById('load-msg').innerText = "画像を送信・AI解析中...";
     
     try {
         const res = await fetch(GAS_ENDPOINT, { 
@@ -239,55 +210,40 @@ async function startAnalysis() {
                 student_id: userId 
             }) 
         });
-        
         const data = await res.json();
-        
-        if (data.status === "error") {
-            throw new Error(data.message);
-        }
-        
+        if (data.status === "error") throw new Error(data.message);
         aiResult = data;
         renderConfirm(aiResult);
-        
         updateStepper(4);
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-confirm').style.display = 'block';
     } catch(e) { 
-        alert("解析エラーが発生しました。時間を置いてやり直してください。\n詳細: " + e.message); 
+        alert("解析エラー: " + e.message); 
         location.reload(); 
     }
 }
 
-// ✅ 新しいUIに合わせて、AIデータを書き出す関数を大幅修正
 function renderConfirm(data) {
     const container = document.getElementById('score-container');
-    container.innerHTML = ''; // 一旦中身を空にする
-    
+    container.innerHTML = '';
     if (data.scores && data.scores.length > 0) {
         data.scores.forEach(s => {
             addRow(s.subject, s.score, s.max_score, s.deviation, s.level, s.average_score, { rank_in_school: s.rank_in_school });
         });
     } else {
-        // もしAIが科目を一つも読み取れなかった場合、空の行を1つ出す
         addBlankRow();
     }
-    // 合計点を計算して表示
     calculateTotalScore();
 } 
 
-// ✅ 科目行を追加する新しい関数（偏差値、評価、平均点などを表示）
 function addRow(subject, score, max_score, deviation, level, average_score, metadata) {
     const container = document.getElementById('score-container');
     const row = document.createElement('div');
     row.className = 'score-card score-row';
-    
-    // 元の値を覚えさせる
     row.dataset.origSubject = subject || '';
     row.dataset.origScore = score || '';
     row.dataset.metadata = JSON.stringify(metadata || {});
-
-    // 評価バッジの色クラスを設定
-    const levelClass = (level === 'S' || level === 'A' || level === 'B') ? level : 'C'; // C, D, Eなどは青/赤系にするなどの拡張可能
+    const levelClass = (['S','A','B'].includes(level)) ? level : 'C';
 
     row.innerHTML = `
         <button class="card-delete" onclick="this.parentElement.remove(); calculateTotalScore();">×</button>
@@ -303,12 +259,12 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
             <div class="card-details">
                 <div class="detail-item">
                     <span class="label-badge 偏差値">偏差値</span>
-                    <span class="deviation-value">${deviation ? deviation.toFixed(1) : ''}</span>
+                    <span class="deviation-value">${deviation ? parseFloat(deviation).toFixed(1) : ''}</span>
                 </div>
                 <div class="level-badge ${levelClass}">${level || ''}</div>
                 <div class="detail-item">
                     <span class="label-badge 平均点">平均点</span>
-                    <span class="average-score-value">${average_score ? average_score.toFixed(1) : ''}</span>
+                    <span class="average-score-value">${average_score ? parseFloat(average_score).toFixed(1) : ''}</span>
                 </div>
             </div>
         </div>
@@ -316,24 +272,17 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
     container.appendChild(row);
 } 
 
-// ✅ 合計点を計算して表示する関数
 function calculateTotalScore() {
     let total = 0;
     document.querySelectorAll('.input-score').forEach(input => {
-        const val = parseInt(input.value) || 0;
-        total += val;
+        total += (parseInt(input.value) || 0);
     });
     document.getElementById('total-score-value').innerText = total + "点";
 }
 
-// ✅ 空の科目を追加する関数
-function addBlankRow() {
-    addRow('', '', '', '', '', '', {});
-}
+function addBlankRow() { addRow('', '', '', '', '', '', {}); }
 
 async function finalSubmit() {
-    // スクリーンショットでは「送信」するとなっているが、
-    // ここで保存完了 phase-success に進むように元のロジックを維持
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
     document.getElementById('load-msg').innerText = "結果を保存しています...";
@@ -342,40 +291,33 @@ async function finalSubmit() {
     document.querySelectorAll('.score-row').forEach(row => {
         const sub = row.querySelector('.input-subject').value;
         const sco = row.querySelector('.input-score').value;
-        const maxSco = row.querySelector('.input-max-score').value;
-        const deviation = row.querySelector('.deviation-value').innerText;
-        const average = row.querySelector('.average-score-value').innerText;
-        const level = row.querySelector('.level-badge').innerText;
-        
-        const meta = JSON.parse(row.dataset.metadata || '{}');
-        const isEdited = (sub !== row.dataset.origSubject || sco !== row.dataset.origScore);
-
         if (sub) { 
             finalScores.push({ 
                 subject: sub, 
                 score: parseInt(sco) || 0, 
-                max_score: parseInt(maxSco) || 0,
-                deviation: parseFloat(deviation) || null,
-                average_score: parseFloat(average) || null,
-                level: level || null,
-                is_edited: isEdited,
-                ...meta 
+                max_score: parseInt(row.querySelector('.input-max-score').value) || 0,
+                deviation: parseFloat(row.querySelector('.deviation-value').innerText) || null,
+                average_score: parseFloat(row.querySelector('.average-score-value').innerText) || null,
+                level: row.querySelector('.level-badge').innerText || null,
+                is_edited: (sub !== row.dataset.origSubject || sco !== row.dataset.origScore),
+                ...JSON.parse(row.dataset.metadata || '{}')
             }); 
         }
     });
 
-    const payload = { 
-        student_id: userId, 
-        mode: selectedMode, 
-        exam_name: aiResult.exam_name, 
-        exam_date: aiResult.exam_date, 
-        scores: finalScores,
-        target_schools: aiResult.target_schools, 
-        image_urls: aiResult.imageUrls
-    };
-
     try {
-        await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
+        await fetch(GAS_ENDPOINT, { 
+            method: 'POST', 
+            body: JSON.stringify({
+                student_id: userId, 
+                mode: selectedMode, 
+                exam_name: aiResult.exam_name, 
+                exam_date: aiResult.exam_date, 
+                scores: finalScores,
+                target_schools: aiResult.target_schools, 
+                image_urls: aiResult.imageUrls
+            }) 
+        });
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-success').style.display = 'block';
     } catch(e) { 
