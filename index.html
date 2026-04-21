@@ -73,7 +73,7 @@
     .card-details { display: flex; gap: 12px; align-items: center; white-space: nowrap; }
     .detail-item { display: flex; align-items: center; gap: 5px; }
 
-    /* 偏差値・平均点の数字入力欄（ここが新しい！） */
+    /* 偏差値・平均点の数字入力欄 */
     .input-mini {
         border: none; outline: none; background: none; width: 40px; 
         color: var(--brown); font-weight: bold; font-size: 14px; padding: 0;
@@ -84,7 +84,7 @@
         border-radius: 4px; font-weight: bold; font-size: 10px; 
     }
     
-    /* 評価バッジの入力欄（ここも新しい！） */
+    /* 評価バッジの入力欄 */
     .level-badge.input-level { 
         font-weight: bold; font-size: 10px; width: 18px; height: 18px; 
         border-radius: 50%; display: flex; align-items: center; justify-content: center;
@@ -99,9 +99,36 @@
     .total-score-card { background: #FFEED9; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .total-score-card .value { font-weight: bold; font-size: 20px; color: var(--brown); }
     .warning-alert-card { background: #FFDFC9; border-radius: 12px; padding: 12px; display: grid; grid-template-columns: 24px 1fr; gap: 8px; align-items: start; border: 1px solid #FFDFC9; }
+/* プルダウン（select）の見た目調整 */
+select.input-subject-rich {
+    appearance: none; /* デフォルトの矢印を消す（お好みで） */
+    -webkit-appearance: none;
+    border: none;
+    background: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right center;
+    background-size: 12px;
+    padding-right: 15px; /* 矢印のスペース */
+    font-weight: bold;
+    font-size: 16px;
+    color: #1A1A1A;
+    outline: none;
+    flex: 1;
+}
+
+/* 評価プルダウン */
+select.level-badge {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    outline: none;
+    text-align: center;
+    font-size: 10px;
+    padding: 0;
+    cursor: pointer;
+}
 </style>
 </head>
 <body>
+    
 
 <div class="steps">
     <div id="step-1" class="step-item active">1.モード選択<div class="step-bar"></div></div>
@@ -284,18 +311,42 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
     const row = document.createElement('div');
     row.className = 'score-card score-row';
     
-    row.dataset.origSubject = subject || '';
-    row.dataset.origScore = score || '';
-    row.dataset.metadata = JSON.stringify(metadata || {});
+    // 科目名の選択肢リスト
+    const subjectOptions = ["英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ", "国語", "現代文", "古文", "漢文","物理基礎","化学基礎","生物基礎","地学基礎" "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "公共、倫理", "公共、政治・経済", "情報",];
+    
+    // 評価の選択肢リスト
+    const levelOptions = ["-", "S", "A", "B", "C", "D"];
 
-    // 評価によってクラスを切り替え（S, A, B以外はデフォルト）
+    // 科目のプルダウンを生成
+    let subjectHtml = `<select class="input-subject-rich input-subject">`;
+    subjectHtml += `<option value="">選択してください</option>`;
+    subjectOptions.forEach(opt => {
+        const selected = opt === subject ? "selected" : "";
+        subjectHtml += `<option value="${opt}" ${selected}>${opt}</option>`;
+    });
+    // AIが読み取ったものがリストにない場合、自由入力したい可能性もあるので末尾に追加（任意）
+    if (subject && !subjectOptions.includes(subject)) {
+        subjectHtml += `<option value="${subject}" selected>${subject}</option>`;
+    }
+    subjectHtml += `</select>`;
+
+    // 評価のプルダウンを生成
+    let levelHtml = `<select class="level-badge input-level" onchange="updateLevelClass(this)">`;
+    levelOptions.forEach(opt => {
+        const selected = opt === level ? "selected" : "";
+        levelHtml += `<option value="${opt}" ${selected}>${opt}</option>`;
+    });
+    levelHtml += `</select>`;
+
+    row.dataset.metadata = JSON.stringify(metadata || {});
+    // クラス判定
     const levelClass = (['S','A','B'].includes(level)) ? level : 'C';
 
     row.innerHTML = `
         <button class="card-delete" onclick="this.parentElement.remove(); calculateTotalScore();">×</button>
         <div class="card-content">
             <div class="card-header">
-                <input type="text" class="input-subject-rich input-subject" value="${subject || ''}" placeholder="科目名">
+                ${subjectHtml}
                 <div class="score-input-area">
                     <input type="number" class="input-score-rich input-score" value="${score || ''}" placeholder="?" oninput="calculateTotalScore()">
                     <span>/</span>
@@ -308,7 +359,7 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
                     <input type="number" step="0.1" class="input-mini input-deviation" value="${deviation ? parseFloat(deviation).toFixed(1) : ''}" placeholder="0.0">
                 </div>
                 
-                <input type="text" class="level-badge ${levelClass} input-level" value="${level || ''}" maxlength="1" placeholder="-">
+                ${levelHtml}
                 
                 <div class="detail-item">
                     <span class="label-badge 平均点">平均点</span>
@@ -318,6 +369,21 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
         </div>
     `;
     container.appendChild(row);
+    
+    // 評価の色を初期化
+    const selectEl = row.querySelector('.input-level');
+    updateLevelClass(selectEl);
+}
+
+// 評価が変わった時にバッジの色を更新する関数
+function updateLevelClass(el) {
+    el.classList.remove('S', 'A', 'B', 'C');
+    const val = el.value;
+    if (['S', 'A', 'B'].includes(val)) {
+        el.classList.add(val);
+    } else {
+        el.classList.add('C');
+    }
 }
     
 function calculateTotalScore() {
