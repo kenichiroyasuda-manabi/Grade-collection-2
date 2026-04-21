@@ -23,16 +23,22 @@
         .btn-orange { background: var(--orange); color: #fff; }
         .btn-orange:disabled { background: #ddd; }
         
+        /* 1.モード選択のカードデザイン（統一版） */
+        .mode-select { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+        .mode-card { 
+            background: #fff; border-radius: 16px; padding: 24px 10px; text-align: center; 
+            cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.2s; 
+            border: 2px solid transparent; /* 選択時以外は透明 */
+        }
+        .mode-card:active { transform: scale(0.96); background: #FFF9F5; }
+        .mode-icon { font-size: 40px; display: block; margin-bottom: 10px; }
+        .mode-card strong { font-size: 16px; color: #1A1A1A; display: block; margin-bottom: 6px; }
+        .mode-card p { font-size: 11px; color: #999; line-height: 1.4; }
+
         /* プレビュー画像と×ボタン */
         .preview-container { position: relative; display: inline-block; margin-right: 10px; margin-bottom: 10px; }
         .preview-container img { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
         .btn-img-del { position: absolute; top: -5px; right: -5px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-
-        /* モード選択 */
-        .mode-select { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-        .mode-card { border: 2px solid #eee; border-radius: 12px; padding: 20px 10px; text-align: center; cursor: pointer; background: #fff; transition: 0.2s; }
-        .mode-card.active { border-color: var(--orange); background: #FFF9F5; }
-        .mode-icon { font-size: 32px; display: block; margin-bottom: 5px; }
 
         /* ローダー */
         .loader { width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid var(--orange); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
@@ -80,19 +86,17 @@
 </div>
 
 <div id="phase-mode">
-    <div class="card" style="text-align:center;">
-        <h2 style="font-size:18px; margin-bottom:20px;">登録する成績を選択</h2>
-        <div class="mode-select">
-            <div class="mode-card" onclick="selectMode('模試')">
-                <span class="mode-icon">📝</span>
-                <strong>模試</strong>
-                <p>全統・進研など<br>偏差値・判定あり</p>
-            </div>
-            <div class="mode-card" onclick="selectMode('定期テスト')">
-                <span class="mode-icon">🏫</span>
-                <strong>定期テスト</strong>
-                <p>中間・期末など<br>科目・得点のみ</p>
-            </div>
+    <h2 style="font-size:18px; margin: 0 0 20px 5px; font-weight: bold;">登録する成績を選択</h2>
+    <div class="mode-select">
+        <div class="mode-card" onclick="selectMode('模試')">
+            <span class="mode-icon">📝</span>
+            <strong>模試</strong>
+            <p>全統・進研など<br>偏差値・判定あり</p>
+        </div>
+        <div class="mode-card" onclick="selectMode('定期テスト')">
+            <span class="mode-icon">🏫</span>
+            <strong>定期テスト</strong>
+            <p>中間・期末など<br>科目・得点のみ</p>
         </div>
     </div>
 </div>
@@ -138,7 +142,6 @@
         </div>
         
         <button class="btn" style="border:1px solid var(--red); color:var(--red); background:none; margin-top:15px; font-size:14px; border-radius: 8px;" onclick="retakePhotos()">🗑 画像を撮り直す</button>
-
         <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:10px 0; font-size:14px; border-radius: 8px;" onclick="addBlankRow()">＋ 科目を追加する</button>
         <button class="btn btn-orange" style="border-radius: 8px; background-color: var(--brown);" onclick="finalSubmit()">この内容で送信する →</button>
     </div>
@@ -173,13 +176,11 @@ function selectMode(mode) {
     document.getElementById('mode-title').innerText = mode + "を撮影";
 }
 
-// ✅ 1枚ずつ消す機能
 function removeImage(index) {
     uploadedFiles.splice(index, 1);
     renderPreviews();
 }
 
-// ✅ プレビュー再描画
 function renderPreviews() {
     const area = document.getElementById('previewArea');
     area.innerHTML = '';
@@ -195,7 +196,6 @@ function renderPreviews() {
     document.getElementById('btn-analyze').disabled = (uploadedFiles.length === 0);
 }
 
-// ✅ 解析後にStep2へ戻る機能
 function retakePhotos() {
     if(!confirm("解析結果を破棄して、写真を撮り直しますか？")) return;
     updateStepper(2);
