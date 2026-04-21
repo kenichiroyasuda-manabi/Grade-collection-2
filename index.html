@@ -23,39 +23,30 @@
         .btn-orange { background: var(--orange); color: #fff; }
         .btn-orange:disabled { background: #ddd; }
         
+        /* プレビュー画像と×ボタン */
+        .preview-container { position: relative; display: inline-block; margin-right: 10px; margin-bottom: 10px; }
+        .preview-container img { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
+        .btn-img-del { position: absolute; top: -5px; right: -5px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
         /* モード選択 */
         .mode-select { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
         .mode-card { border: 2px solid #eee; border-radius: 12px; padding: 20px 10px; text-align: center; cursor: pointer; background: #fff; transition: 0.2s; }
         .mode-card.active { border-color: var(--orange); background: #FFF9F5; }
         .mode-icon { font-size: 32px; display: block; margin-bottom: 5px; }
-        .mode-card p { font-size: 10px; color: #999; margin-top: 5px; line-height: 1.3; }
 
         /* ローダー */
         .loader { width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid var(--orange); border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        #previewArea img { width: 55px; height: 55px; object-fit: cover; border-radius: 6px; margin-right: 6px; border: 1px solid #ddd; }
 
         /* 確認画面レイアウト */
         #score-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
-        .score-card { 
-            background: #fff; border-radius: 12px; padding: 15px; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03); position: relative; 
-            display: grid; grid-template-columns: 32px 1fr; gap: 8px; align-items: center; 
-        }
-        .card-delete { 
-            background: var(--green); color: #fff; border: none; border-radius: 50%; 
-            width: 22px; height: 22px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
+        .score-card { background: #fff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 8px; align-items: center; }
+        .card-delete { background: var(--green); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .card-content { display: flex; flex-direction: column; gap: 10px; width: 100%; }
         .card-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
 
         /* プルダウン・入力欄 */
-        select.input-subject-rich {
-            appearance: none; -webkit-appearance: none; border: none;
-            background: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right center;
-            background-size: 12px; padding-right: 15px; font-weight: bold; font-size: 16px; color: #1A1A1A; outline: none; flex: 1;
-        }
+        select.input-subject-rich { appearance: none; -webkit-appearance: none; border: none; background: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right center; background-size: 12px; padding-right: 15px; font-weight: bold; font-size: 16px; color: #1A1A1A; outline: none; flex: 1; }
         .score-input-area { display: flex; align-items: center; color: #999; font-size: 14px; white-space: nowrap; }
         .input-score-rich { border: none; font-weight: bold; font-size: 20px; color: #1A1A1A; outline: none; text-align: right; width: 45px; background: none; }
         .input-max-score-rich { border: none; font-size: 14px; color: #ccc; outline: none; width: 35px; background: none; text-align: left; }
@@ -114,11 +105,8 @@
             <p style="font-size:35px; margin-bottom:10px;">📸</p>
             <p style="color:var(--orange); font-weight:bold;">写真を撮影（複数枚可）</p>
         </div>
-        <div id="previewArea" style="display:flex; margin-top:15px; overflow-x:auto;"></div>
-        
-        <button id="btn-retake" class="btn" style="display:none; background:none; color:var(--red); border:1px solid var(--red); margin-top:15px; font-size:14px; padding:10px;" onclick="resetPhotos()">🗑 写真をすべて消して撮り直す</button>
-
-        <button id="btn-analyze" class="btn btn-orange" style="margin-top:25px;" disabled onclick="startAnalysis()">AI解析を開始する</button>
+        <div id="previewArea" style="display:flex; margin-top:15px; overflow-x:auto; flex-wrap: wrap;"></div>
+        <button id="btn-analyze" class="btn btn-orange" style="margin-top:15px;" disabled onclick="startAnalysis()">AI解析を開始する</button>
         <button class="btn" style="background:none; color:#999; font-size:13px; margin-top:10px;" onclick="location.reload()">← モード選択に戻る</button>
     </div>
 </div>
@@ -148,7 +136,10 @@
                 修正後に「送信」してください。
             </p>
         </div>
-        <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:15px 0; font-size:14px; border-radius: 8px;" onclick="addBlankRow()">＋ 科目を追加する</button>
+        
+        <button class="btn" style="border:1px solid var(--red); color:var(--red); background:none; margin-top:15px; font-size:14px; border-radius: 8px;" onclick="retakePhotos()">🗑 画像を撮り直す</button>
+
+        <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:10px 0; font-size:14px; border-radius: 8px;" onclick="addBlankRow()">＋ 科目を追加する</button>
         <button class="btn btn-orange" style="border-radius: 8px; background-color: var(--brown);" onclick="finalSubmit()">この内容で送信する →</button>
     </div>
 </div>
@@ -167,13 +158,6 @@ const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "";
     
-function updateStepper(step) {
-    document.querySelectorAll('.step-item').forEach((el, idx) => {
-        if (idx < step) el.classList.add('active');
-        else el.classList.remove('active');
-    });
-}
-
 async function init() {
     await liff.init({ liffId: MY_LIFF_ID });
     if (!liff.isLoggedIn()) liff.login();
@@ -189,28 +173,42 @@ function selectMode(mode) {
     document.getElementById('mode-title').innerText = mode + "を撮影";
 }
 
-// ✅ 撮り直し関数
-function resetPhotos() {
-    if(!confirm("選択した写真をすべて削除しますか？")) return;
-    uploadedFiles = [];
-    document.getElementById('files').value = "";
-    document.getElementById('previewArea').innerHTML = "";
-    document.getElementById('btn-analyze').disabled = true;
-    document.getElementById('btn-retake').style.display = 'none';
+// ✅ 1枚ずつ消す機能
+function removeImage(index) {
+    uploadedFiles.splice(index, 1);
+    renderPreviews();
+}
+
+// ✅ プレビュー再描画
+function renderPreviews() {
+    const area = document.getElementById('previewArea');
+    area.innerHTML = '';
+    uploadedFiles.forEach((file, idx) => {
+        const container = document.createElement('div');
+        container.className = 'preview-container';
+        container.innerHTML = `
+            <img src="data:image/jpeg;base64,${file.base64}">
+            <button class="btn-img-del" onclick="removeImage(${idx})">×</button>
+        `;
+        area.appendChild(container);
+    });
+    document.getElementById('btn-analyze').disabled = (uploadedFiles.length === 0);
+}
+
+// ✅ 解析後にStep2へ戻る機能
+function retakePhotos() {
+    if(!confirm("解析結果を破棄して、写真を撮り直しますか？")) return;
+    updateStepper(2);
+    document.getElementById('phase-confirm').style.display = 'none';
+    document.getElementById('phase-upload').style.display = 'block';
 }
 
 async function handleFiles(files) {
-    if (files.length === 0) return;
-    uploadedFiles = [];
-    const area = document.getElementById('previewArea');
-    area.innerHTML = '';
     for (let f of files) {
         const base64 = await resizeImage(f);
         uploadedFiles.push({ base64: base64.split(',')[1] });
-        const img = document.createElement('img'); img.src = base64; area.appendChild(img);
     }
-    document.getElementById('btn-analyze').disabled = (uploadedFiles.length === 0);
-    document.getElementById('btn-retake').style.display = (uploadedFiles.length > 0) ? 'block' : 'none';
+    renderPreviews();
 }
 
 function resizeImage(file) {
@@ -231,6 +229,13 @@ function resizeImage(file) {
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
+    });
+}
+
+function updateStepper(step) {
+    document.querySelectorAll('.step-item').forEach((el, idx) => {
+        if (idx < step) el.classList.add('active');
+        else el.classList.remove('active');
     });
 }
 
@@ -273,10 +278,8 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
     const container = document.getElementById('score-container');
     const row = document.createElement('div');
     row.className = 'score-card score-row';
-    
     const subjectOptions = ["英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ", "国語", "現代文", "古文", "漢文","物理基礎","化学基礎","生物基礎","地学基礎", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "公共、倫理", "公共、政治・経済", "情報"];
     const levelOptions = ["-", "S", "A", "B", "C", "D", "E"];
-
     let subjectHtml = `<select class="input-subject-rich input-subject"><option value="">選択してください</option>`;
     subjectOptions.forEach(opt => {
         const selected = opt === subject ? "selected" : "";
@@ -286,16 +289,13 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
         subjectHtml += `<option value="${subject}" selected>${subject}</option>`;
     }
     subjectHtml += `</select>`;
-
     let levelHtml = `<select class="level-badge input-level" onchange="updateLevelClass(this)">`;
     levelOptions.forEach(opt => {
         const selected = opt === level ? "selected" : "";
         levelHtml += `<option value="${opt}" ${selected}>${opt}</option>`;
     });
     levelHtml += `</select>`;
-
     row.dataset.metadata = JSON.stringify(metadata || {});
-
     row.innerHTML = `
         <button class="card-delete" onclick="this.parentElement.remove(); calculateTotalScore();">×</button>
         <div class="card-content">
@@ -335,8 +335,10 @@ function calculateTotalScore() {
     let total = 0;
     document.querySelectorAll('.input-score').forEach(input => { total += (parseInt(input.value) || 0); });
     const totalInput = document.getElementById('total-score-value');
-    totalInput.value = total;
-    totalInput.style.width = (total.toString().length + 1) + 'ch';
+    if(totalInput){
+        totalInput.value = total;
+        totalInput.style.width = (total.toString().length + 1) + 'ch';
+    }
 }
 
 function addBlankRow() { addRow('', '', '', '', '', '', {}); }
@@ -344,8 +346,6 @@ function addBlankRow() { addRow('', '', '', '', '', '', {}); }
 async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
-    document.getElementById('load-msg').innerText = "結果を保存しています...";
-
     const finalScores = [];
     document.querySelectorAll('.score-row').forEach(row => {
         const sub = row.querySelector('.input-subject').value;
@@ -363,21 +363,16 @@ async function finalSubmit() {
             }); 
         }
     });
-
     const manualTotal = document.getElementById('total-score-value').value;
-    const payload = {
-        student_id: userId, 
-        mode: selectedMode, 
-        exam_name: aiResult.exam_name, 
-        exam_date: aiResult.exam_date, 
-        scores: finalScores,
-        total_score_manual: parseInt(manualTotal) || 0,
-        target_schools: aiResult.target_schools, 
-        image_urls: aiResult.imageUrls
-    };
-
     try {
-        await fetch(GAS_ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
+        await fetch(GAS_ENDPOINT, { 
+            method: 'POST', 
+            body: JSON.stringify({
+                student_id: userId, mode: selectedMode, exam_name: aiResult.exam_name, exam_date: aiResult.exam_date, 
+                scores: finalScores, total_score_manual: parseInt(manualTotal) || 0,
+                target_schools: aiResult.target_schools, image_urls: aiResult.imageUrls
+            }) 
+        });
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-success').style.display = 'block';
     } catch(e) { 
