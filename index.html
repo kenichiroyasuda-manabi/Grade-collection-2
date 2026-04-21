@@ -36,27 +36,86 @@
         #previewArea img { width: 55px; height: 55px; object-fit: cover; border-radius: 6px; margin-right: 6px; border: 1px solid #ddd; }
 
         /* ✅ 確認画面専用のリッチUI CSS */
-        #score-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
-        .score-card { background: #fff; border-radius: 12px; padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: start; }
-        .card-delete { background: var(--green); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-weight: bold; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; position: absolute; left: 10px; top: 18px; }
-        .card-content { display: flex; flex-direction: column; gap: 8px; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-        .input-subject-rich { border: none; font-weight: bold; font-size: 14px; color: #1A1A1A; outline: none; width: 100%; padding: 0; background: none; }
-        .score-input-area { display: flex; align-items: center; color: #999; font-size: 13px; gap: 2px; }
-        .input-score-rich { border: none; font-weight: bold; font-size: 20px; color: #1A1A1A; outline: none; text-align: right; width: 50px; padding: 0; background: none; }
-        .input-max-score-rich { border: none; font-size: 13px; color: #ccc; outline: none; width: 30px; padding: 0; background: none; text-align: left; }
-        .card-details { display: flex; gap: 8px; align-items: center; font-size: 10px; }
-        .label-badge { background: #E4F1E9; color: var(--green); padding: 3px 6px; border-radius: 4px; font-weight: bold; }
-        .deviation-value, .average-score-value { color: var(--brown); font-weight: bold; margin-left: -4px; }
-        .level-badge { font-weight: bold; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .level-badge.S { background: #C7C2EE; color: #5149B4; }
-        .level-badge.A { background: #FFEED9; color: var(--brown); }
-        .level-badge.B { background: #E4F1E9; color: var(--green); }
-        .total-score-card { background: #FFEED9; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .total-score-card .label { font-weight: bold; font-size: 14px; }
-        .total-score-card .value { font-weight: bold; font-size: 20px; color: var(--brown); }
-        .warning-alert-card { background: #FFDFC9; border-radius: 12px; padding: 12px; display: grid; grid-template-columns: 24px 1fr; gap: 8px; align-items: start; border: 1px solid #FFDFC9; }
-    </style>
+        /* ✅ 確認画面のレイアウト修正版 */
+#score-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+
+.score-card { 
+    background: #fff; 
+    border-radius: 12px; 
+    padding: 15px; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03); 
+    position: relative; 
+    display: grid; 
+    grid-template-columns: 32px 1fr; /* 左側に削除ボタン用のスペース */
+    gap: 8px; 
+    align-items: center; 
+}
+
+/* 削除ボタン */
+.card-delete { 
+    background: var(--green); color: #fff; border: none; border-radius: 50%; 
+    width: 22px; height: 22px; font-weight: bold; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.card-content { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
+/* 科目名と点数行 */
+.card-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    width: 100%; 
+}
+
+/* 科目名の幅を確保 */
+.input-subject-rich { 
+    border: none; font-weight: bold; font-size: 16px; color: #1A1A1A; 
+    outline: none; background: none; flex: 1; min-width: 0; 
+}
+
+.score-input-area { 
+    display: flex; align-items: center; color: #999; font-size: 14px; 
+    white-space: nowrap; flex-shrink: 0;
+}
+
+.input-score-rich { 
+    border: none; font-weight: bold; font-size: 20px; color: #1A1A1A; 
+    outline: none; text-align: right; width: 45px; background: none; 
+}
+
+/* 偏差値・平均点エリア（ここを横並びに強制） */
+.card-details { 
+    display: flex; 
+    gap: 15px; 
+    align-items: center; 
+    flex-wrap: nowrap; /* 縦並びを禁止 */
+    overflow-x: auto;  /* 万が一溢れたら横スクロール */
+}
+
+.detail-item { 
+    display: flex; 
+    align-items: center; 
+    gap: 5px; 
+    white-space: nowrap; /* 文字の折り返しを禁止 */
+}
+
+.label-badge { 
+    background: #E4F1E9; color: var(--green); 
+    padding: 2px 6px; border-radius: 4px; 
+    font-weight: bold; font-size: 10px;
+    white-space: nowrap;
+}
+
+.deviation-value, .average-score-value { 
+    color: var(--brown); font-weight: bold; font-size: 12px; 
+}
+
+.level-badge { 
+    font-weight: bold; font-size: 10px; width: 18px; height: 18px; 
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}    </style>
 </head>
 <body>
 
@@ -240,9 +299,11 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
     const container = document.getElementById('score-container');
     const row = document.createElement('div');
     row.className = 'score-card score-row';
+    
     row.dataset.origSubject = subject || '';
     row.dataset.origScore = score || '';
     row.dataset.metadata = JSON.stringify(metadata || {});
+
     const levelClass = (['S','A','B'].includes(level)) ? level : 'C';
 
     row.innerHTML = `
@@ -252,25 +313,25 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
                 <input type="text" class="input-subject-rich input-subject" value="${subject || ''}" placeholder="科目名">
                 <div class="score-input-area">
                     <input type="number" class="input-score-rich input-score" value="${score || ''}" placeholder="?" oninput="calculateTotalScore()">
-                    <span class="slash">/</span>
-                    <input type="number" class="input-max-score-rich input-max-score" value="${max_score || ''}" placeholder="200">
+                    <span>/</span>
+                    <input type="number" class="input-max-score-rich input-max-score" value="${max_score || '200'}" style="width:30px; border:none; outline:none; color:#ccc; background:none; font-size:13px;">
                 </div>
             </div>
             <div class="card-details">
                 <div class="detail-item">
                     <span class="label-badge 偏差値">偏差値</span>
-                    <span class="deviation-value">${deviation ? parseFloat(deviation).toFixed(1) : ''}</span>
+                    <span class="deviation-value">${deviation ? parseFloat(deviation).toFixed(1) : '-'}</span>
                 </div>
-                <div class="level-badge ${levelClass}">${level || ''}</div>
+                <div class="level-badge ${levelClass}">${level || '-'}</div>
                 <div class="detail-item">
                     <span class="label-badge 平均点">平均点</span>
-                    <span class="average-score-value">${average_score ? parseFloat(average_score).toFixed(1) : ''}</span>
+                    <span class="average-score-value">${average_score ? parseFloat(average_score).toFixed(1) : '-'}</span>
                 </div>
             </div>
         </div>
     `;
     container.appendChild(row);
-} 
+}
 
 function calculateTotalScore() {
     let total = 0;
