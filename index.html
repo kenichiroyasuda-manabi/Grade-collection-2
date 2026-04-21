@@ -35,100 +35,52 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         #previewArea img { width: 55px; height: 55px; object-fit: cover; border-radius: 6px; margin-right: 6px; border: 1px solid #ddd; }
 
-        /* ✅ 確認画面専用のリッチUI CSS */
-        /* ✅ 確認画面のレイアウト修正版 */
-<style>
-    /* ✅ 確認画面専用の新しいCSS（修正版） */
-    #score-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
-    
-    /* 科目ごとのカード */
-    .score-card { 
-        background: #fff; border-radius: 12px; padding: 15px; 
-        box-shadow: 0 2px 6px rgba(0,0,0,0.03); position: relative; 
-        display: grid; grid-template-columns: 32px 1fr; gap: 8px; align-items: center; 
-    }
-    
-    /* 削除ボタン */
-    .card-delete { 
-        background: var(--green); color: #fff; border: none; border-radius: 50%; 
-        width: 22px; height: 22px; font-weight: bold; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-    }
-    
-    .card-content { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-    .card-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        /* 確認画面レイアウト */
+        #score-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+        .score-card { 
+            background: #fff; border-radius: 12px; padding: 15px; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03); position: relative; 
+            display: grid; grid-template-columns: 32px 1fr; gap: 8px; align-items: center; 
+        }
+        .card-delete { 
+            background: var(--green); color: #fff; border: none; border-radius: 50%; 
+            width: 22px; height: 22px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .card-content { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
 
-    /* 科目名の入力欄 */
-    .input-subject-rich { 
-        border: none; font-weight: bold; font-size: 16px; color: #1A1A1A; 
-        outline: none; background: none; flex: 1; min-width: 0; 
-    }
-    
-    /* 点数エリア */
-    .score-input-area { display: flex; align-items: center; color: #999; font-size: 14px; white-space: nowrap; }
-    .input-score-rich { border: none; font-weight: bold; font-size: 20px; color: #1A1A1A; outline: none; text-align: right; width: 45px; background: none; }
-    .input-max-score-rich { border: none; font-size: 14px; color: #ccc; outline: none; width: 35px; background: none; text-align: left; }
-    
-    /* 偏差値・評価・平均点エリア（横並びを死守） */
-    .card-details { display: flex; gap: 12px; align-items: center; white-space: nowrap; }
-    .detail-item { display: flex; align-items: center; gap: 5px; }
+        /* プルダウン・入力欄 */
+        select.input-subject-rich {
+            appearance: none; -webkit-appearance: none; border: none;
+            background: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right center;
+            background-size: 12px; padding-right: 15px; font-weight: bold; font-size: 16px; color: #1A1A1A; outline: none; flex: 1;
+        }
+        .score-input-area { display: flex; align-items: center; color: #999; font-size: 14px; white-space: nowrap; }
+        .input-score-rich { border: none; font-weight: bold; font-size: 20px; color: #1A1A1A; outline: none; text-align: right; width: 45px; background: none; }
+        .input-max-score-rich { border: none; font-size: 14px; color: #ccc; outline: none; width: 35px; background: none; text-align: left; }
+        
+        .card-details { display: flex; gap: 12px; align-items: center; white-space: nowrap; }
+        .detail-item { display: flex; align-items: center; gap: 5px; }
+        .input-mini { border: none; outline: none; background: none; width: 40px; color: var(--brown); font-weight: bold; font-size: 14px; padding: 0; }
+        .label-badge { background: #E4F1E9; color: var(--green); padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; }
+        
+        select.level-badge { 
+            font-weight: bold; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; appearance: none;
+            border: none; outline: none; text-align: center; cursor: pointer;
+        }
+        .level-badge.S { background: #C7C2EE; color: #5149B4; }
+        .level-badge.A { background: #FFEED9; color: var(--brown); }
+        .level-badge.B { background: #E4F1E9; color: var(--green); }
+        .level-badge.C { background: #eee; color: #999; }
 
-    /* 偏差値・平均点の数字入力欄 */
-    .input-mini {
-        border: none; outline: none; background: none; width: 40px; 
-        color: var(--brown); font-weight: bold; font-size: 14px; padding: 0;
-    }
-
-    .label-badge { 
-        background: #E4F1E9; color: var(--green); padding: 2px 6px; 
-        border-radius: 4px; font-weight: bold; font-size: 10px; 
-    }
-    
-    /* 評価バッジの入力欄 */
-    .level-badge.input-level { 
-        font-weight: bold; font-size: 10px; width: 18px; height: 18px; 
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        border: none; outline: none; text-align: center; cursor: pointer;
-    }
-    .level-badge.S { background: #C7C2EE; color: #5149B4; }
-    .level-badge.A { background: #FFEED9; color: var(--brown); }
-    .level-badge.B { background: #E4F1E9; color: var(--green); }
-    .level-badge.C { background: #eee; color: #999; }
-
-    /* 合計点・注意書き */
-    .total-score-card { background: #FFEED9; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .total-score-card .value { font-weight: bold; font-size: 20px; color: var(--brown); }
-    .warning-alert-card { background: #FFDFC9; border-radius: 12px; padding: 12px; display: grid; grid-template-columns: 24px 1fr; gap: 8px; align-items: start; border: 1px solid #FFDFC9; }
-/* プルダウン（select）の見た目調整 */
-select.input-subject-rich {
-    appearance: none; /* デフォルトの矢印を消す（お好みで） */
-    -webkit-appearance: none;
-    border: none;
-    background: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right center;
-    background-size: 12px;
-    padding-right: 15px; /* 矢印のスペース */
-    font-weight: bold;
-    font-size: 16px;
-    color: #1A1A1A;
-    outline: none;
-    flex: 1;
-}
-
-/* 評価プルダウン */
-select.level-badge {
-    appearance: none;
-    -webkit-appearance: none;
-    border: none;
-    outline: none;
-    text-align: center;
-    font-size: 10px;
-    padding: 0;
-    cursor: pointer;
-}
-</style>
+        .total-score-card { background: #FFEED9; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .total-score-card .value { font-weight: bold; font-size: 20px; color: var(--brown); }
+        .warning-alert-card { background: #FFDFC9; border-radius: 12px; padding: 12px; display: grid; grid-template-columns: 24px 1fr; gap: 8px; align-items: start; border: 1px solid #FFDFC9; }
+    </style>
 </head>
 <body>
-    
 
 <div class="steps">
     <div id="step-1" class="step-item active">1.モード選択<div class="step-bar"></div></div>
@@ -312,10 +264,10 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
     row.className = 'score-card score-row';
     
     // 科目名の選択肢リスト
-    const subjectOptions = ["英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ", "国語", "現代文", "古文", "漢文","物理基礎","化学基礎","生物基礎","地学基礎" "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "公共、倫理", "公共、政治・経済", "情報",];
+    const subjectOptions = ["英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ", "国語", "現代文", "古文", "漢文","物理基礎","化学基礎","生物基礎","地学基礎", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "公共、倫理", "公共、政治・経済", "情報",];
     
     // 評価の選択肢リスト
-    const levelOptions = ["-", "S", "A", "B", "C", "D"];
+    const levelOptions = ["-", "S", "A", "B", "C", "D", "E"];
 
     // 科目のプルダウンを生成
     let subjectHtml = `<select class="input-subject-rich input-subject">`;
