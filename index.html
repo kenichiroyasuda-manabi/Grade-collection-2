@@ -60,16 +60,31 @@
         .input-score-rich { border: none; font-weight: bold; font-size: 20px; color: #1A1A1A; outline: none; text-align: right; width: 45px; background: none; }
         .input-max-score-rich { border: none; font-size: 14px; color: #ccc; outline: none; width: 35px; background: none; text-align: left; }
         
-        .card-details { display: flex; gap: 12px; align-items: center; white-space: nowrap; }
+        .card-details { display: flex; gap: 8px; align-items: center; white-space: nowrap;height: 24px;}
         .detail-item { display: flex; align-items: center; gap: 5px; }
         .input-mini { border: none; outline: none; background: none; width: 40px; color: var(--brown); font-weight: bold; font-size: 14px; padding: 0; }
         .label-badge { background: #E4F1E9; color: var(--green); padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; }
         
-        select.level-badge { 
-            font-weight: bold; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; appearance: none;
-            border: none; outline: none; text-align: center; cursor: pointer;
-        }
+       select.level-badge.input-level { 
+    font-weight: bold; 
+    font-size: 10px; 
+    width: 20px;  /* 少し大きくして中心を取りやすくする */
+    height: 20px; 
+    border-radius: 50%; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center;
+    appearance: none;
+    -webkit-appearance: none;
+    border: none; 
+    outline: none; 
+    text-align: center; 
+    text-align-last: center; /* iOSで文字を中央に寄せる */
+    cursor: pointer;
+    padding: 0;
+    line-height: 1; /* 行間によるズレを防止 */
+    margin: 0 2px;  /* 前後の余白を微調整 */
+}
         .level-badge.S { background: #C7C2EE; color: #5149B4; }
         .level-badge.A { background: #FFEED9; color: var(--brown); }
         .level-badge.B { background: #E4F1E9; color: var(--green); }
