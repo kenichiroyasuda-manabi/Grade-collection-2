@@ -136,8 +136,7 @@
         <div class="warning-alert-card">
             <span class="alert-icon">⚠️</span>
             <p style="font-size: 11px; color:#A07137; line-height: 1.4;">
-                偏差値・平均点は全国偏差値・平均点を記入してください。<br>
-                修正後に「送信」してください。
+                偏差値・平均点は全国偏差値・平均点を記入してください。
             </p>
         </div>
         
@@ -346,6 +345,7 @@ function addBlankRow() { addRow('', '', '', '', '', '', {}); }
 async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
+    document.getElementById('load-msg').innerText = "結果を保存しています...";
     const finalScores = [];
     document.querySelectorAll('.score-row').forEach(row => {
         const sub = row.querySelector('.input-subject').value;
