@@ -324,7 +324,10 @@ function normalizeSubject(raw) {
     
     const subjectOptions = ["英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ", "国語", "国語(現代文)", "国語(古文)", "国語(漢文)","物理基礎","化学基礎","生物基礎","地学基礎", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "公共/倫理", "公共/政治・経済", "情報"];
     const levelOptions = ["-", "S", "A", "B", "C", "D", "E"];
-
+// row要素に AIが読み取った「元の点数」を保持させる
+    row.dataset.originalScore = score || '';
+    row.dataset.originalSubject = normalizedSubject; // normalize後の値を基準にする
+    row.dataset.metadata = JSON.stringify(metadata || {});
     let subjectHtml = `<select class="input-subject-rich input-subject">`;
     subjectHtml += `<option value="">選択してください</option>`; // normalizedSubjectが""ならこれが選ばれる
     subjectOptions.forEach(opt => {
@@ -395,15 +398,19 @@ async function finalSubmit() {
         const sub = row.querySelector('.input-subject').value;
         const sco = row.querySelector('.input-score').value;
         if (sub) { 
+            // ★ 修正フラグの判定ロジック
+            // 「今の科目名」が元の値と違う、または「今の点数」が元の値と違う場合に true
+            const hasChanged = (sub !== row.dataset.originalSubject) || (sco != row.dataset.originalScore);
+
             finalScores.push({ 
+                ...JSON.parse(row.dataset.metadata || '{}'), // 1. まず元のデータを展開
                 subject: sub, 
                 score: parseInt(sco) || 0, 
                 max_score: parseInt(row.querySelector('.input-max-score').value) || 0,
                 deviation: parseFloat(row.querySelector('.input-deviation').value) || null,
                 average_score: parseFloat(row.querySelector('.input-average').value) || null,
                 level: row.querySelector('.input-level').value || null,
-                is_edited: true,
-                ...JSON.parse(row.dataset.metadata || '{}')
+                is_edited: hasChanged // 2. 最後に修正フラグをセット（これで確実に上書き）
             }); 
         }
     });
