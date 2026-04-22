@@ -273,20 +273,64 @@ function renderConfirm(data) {
     calculateTotalScore();
 } 
 
-function addRow(subject, score, max_score, deviation, level, average_score, metadata) {
+function normalizeSubject(raw) {
+    if (!raw) return "";
+    
+    // マスターリスト（addRow内のリストと完全一致させてください）
+    const subjectOptions = ["英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ", "国語", "国語(現代文)", "国語(古文)", "国語(漢文)","物理基礎","化学基礎","生物基礎","地学基礎", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "公共/倫理", "公共/政治・経済", "情報"];
+
+    // --- 1. 英語の特別ルール ---
+    if (raw.includes("リスニング")) {
+        return "英語リスニング";
+    }
+    // リスニング以外の「英」「筆記」「リーディング」などはすべて「英語リーディング」へ
+    if (raw.includes("英語") || raw.includes("リーディング") || raw.includes("筆記") || raw.includes("英")) {
+        return "英語リーディング";
+    }
+
+    // --- 2. 国語の特別ルール（現代文などはそのまま通す） ---
+    if (raw.includes("現代文") || raw.includes("現文")) return "国語(現代文)";
+    if (raw.includes("古文")) return "国語(古文)";
+    if (raw.includes("漢文")) return "国語(漢文)";
+
+    // --- 3. その他のエイリアス（別名対応） ---
+    const aliases = {
+        "数ⅠA": "数学①(Ⅰ,A)", "数学1A": "数学①(Ⅰ,A)", "数IA": "数学①(Ⅰ,A)",
+        "数ⅡB": "数学②(Ⅱ,B,C)", "数学2B": "数学②(Ⅱ,B,C)", "数IIB": "数学②(Ⅱ,B,C)",
+        "数Ⅲ": "数学Ⅲ", "数3": "数学Ⅲ",
+        "現社": "公共/倫理", "政経": "公共/政治・経済"
+    };
+    if (aliases[raw]) return aliases[raw];
+
+    // --- 4. 部分一致チェック ---
+    // リスト内の科目名が、AIの読み取り結果に含まれているかチェック
+    for (let opt of subjectOptions) {
+        if (raw.includes(opt) || opt.includes(raw)) {
+            return opt;
+        }
+    }
+
+    // --- 5. どれにも当てはまらなければ空欄（選択してください） ---
+    return "";
+}
+
+    function addRow(subject, score, max_score, deviation, level, average_score, metadata) {
     const container = document.getElementById('score-container');
     const row = document.createElement('div');
     row.className = 'score-card score-row';
-    const subjectOptions = ["英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ", "国語", "現代文", "古文", "漢文","物理基礎","化学基礎","生物基礎","地学基礎", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "公共、倫理", "公共、政治・経済", "情報"];
+    
+    // AIの値をマスターリストのどれかに当てはめる（なければ""）
+    const normalizedSubject = normalizeSubject(subject);
+    
+    const subjectOptions = ["英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ", "国語", "国語(現代文)", "国語(古文)", "国語(漢文)","物理基礎","化学基礎","生物基礎","地学基礎", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "公共/倫理", "公共/政治・経済", "情報"];
     const levelOptions = ["-", "S", "A", "B", "C", "D", "E"];
-    let subjectHtml = `<select class="input-subject-rich input-subject"><option value="">選択してください</option>`;
+
+    let subjectHtml = `<select class="input-subject-rich input-subject">`;
+    subjectHtml += `<option value="">選択してください</option>`; // normalizedSubjectが""ならこれが選ばれる
     subjectOptions.forEach(opt => {
-        const selected = opt === subject ? "selected" : "";
+        const selected = opt === normalizedSubject ? "selected" : "";
         subjectHtml += `<option value="${opt}" ${selected}>${opt}</option>`;
     });
-    if (subject && !subjectOptions.includes(subject)) {
-        subjectHtml += `<option value="${subject}" selected>${subject}</option>`;
-    }
     subjectHtml += `</select>`;
     let levelHtml = `<select class="level-badge input-level" onchange="updateLevelClass(this)">`;
     levelOptions.forEach(opt => {
