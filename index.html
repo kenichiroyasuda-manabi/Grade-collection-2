@@ -76,11 +76,14 @@
         .input-score-rich { border: none; font-weight: bold; font-size: 20px; color: #1A1A1A; outline: none; text-align: right; width: 45px; background: none; }
         .input-max-score-rich { border: none; font-size: 14px; color: #ccc; outline: none; width: 35px; background: none; text-align: left; }
 
-        .card-details { display: flex; gap: 8px; align-items: center; white-space: nowrap; height: 24px; }
-        .detail-item { display: flex; align-items: center; gap: 5px; }
-        .input-mini { border: none; outline: none; background: none; width: 40px; color: var(--brown); font-weight: bold; font-size: 14px; padding: 0; }
+        .card-details { display: flex; gap: 10px; align-items: center; }
+        .detail-item { display: flex; align-items: center; gap: 6px; }
+        /* 偏差値：大きく・タップしやすく */
+        .deviation-wrap { display: flex; align-items: center; gap: 6px; background: #F5F0FF; border-radius: 10px; padding: 6px 10px; flex: 1; }
+        .deviation-label { font-size: 11px; font-weight: bold; color: #7B68CC; white-space: nowrap; }
+        .input-deviation { border: none; outline: none; background: none; width: 52px; color: #5149B4; font-weight: bold; font-size: 20px; padding: 0; text-align: right; font-family: inherit; -webkit-appearance: none; }
         .label-badge { background: #E4F1E9; color: var(--green); padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; }
-        select.level-badge.input-level { font-weight: bold; font-size: 10px; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; border: none; outline: none; text-align: center; text-align-last: center; cursor: pointer; padding: 0; line-height: 1; margin: 0 2px; }
+        select.level-badge.input-level { font-weight: bold; font-size: 10px; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; appearance: none; -webkit-appearance: none; border: none; outline: none; text-align: center; text-align-last: center; cursor: pointer; padding: 0; line-height: 1; margin: 0 2px; }
         .level-badge.S { background: #C7C2EE; color: #5149B4; }
         .level-badge.A { background: #FFEED9; color: var(--brown); }
         .level-badge.B { background: #E4F1E9; color: var(--green); }
@@ -194,7 +197,7 @@
         <div class="warning-alert-card">
             <span>⚠️</span>
             <p style="font-size: 11px; color:#A07137; line-height: 1.4;">
-                偏差値・平均点は全国偏差値・平均点です。数値がおかしい場合は直接タップして修正できます。
+                偏差値がおかしい場合は直接タップして修正できます。平均点はAI取得値をそのまま保存します。
             </p>
         </div>
 
@@ -214,7 +217,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwr4TqF9xzf-rU0rxnopcXxZpH6657TzB4YJXtMfgTc-rADiBdPPkXuSZ7QYQUXtOok/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxXEsy_6mDwt1--U0sbVXEdgDpC3OBltMvWj2Wip3PimsNaBdAApwJT1hbLskQxzodD/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -452,15 +455,12 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
                 </div>
             </div>
             <div class="card-details">
-                <div class="detail-item">
-                    <span class="label-badge">偏差値</span>
-                    <input type="number" step="0.1" class="input-mini input-deviation" value="${deviation ? parseFloat(deviation).toFixed(1) : ''}" placeholder="0.0">
+                <div class="deviation-wrap">
+                    <span class="deviation-label">偏差値</span>
+                    <input type="number" step="0.1" class="input-deviation" value="${deviation ? parseFloat(deviation).toFixed(1) : ''}" placeholder="--">
                 </div>
                 ${levelHtml}
-                <div class="detail-item">
-                    <span class="label-badge">平均点</span>
-                    <input type="number" step="0.1" class="input-mini input-average" value="${average_score ? parseFloat(average_score).toFixed(1) : ''}" placeholder="0.0">
-                </div>
+                <input type="hidden" class="input-average" value="${average_score ? parseFloat(average_score).toFixed(1) : ''}">
             </div>
         </div>
     `;
