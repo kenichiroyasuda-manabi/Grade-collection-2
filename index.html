@@ -218,7 +218,7 @@ function resizeImage(file) {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let w = img.width, h = img.height;
-                const max = 2000; 
+                const max = 2400; 
                 if (w > h && w > max) { h *= max / w; w = max; }
                 else if (h > max) { w *= max / h; h = max; }
                 canvas.width = w; canvas.height = h;
