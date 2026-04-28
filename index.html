@@ -217,7 +217,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw6OIs--64sMN-D8eZzuu-IGIjtcVDDooDcat2hZcTPfo-4QBC-Oy7v2j_ygulUZzf1/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxXEsy_6mDwt1--U0sbVXEdgDpC3OBltMvWj2Wip3PimsNaBdAApwJT1hbLskQxzodD/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -312,12 +312,12 @@ function resizeImage(file) {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let w = img.width, h = img.height;
-                const max = 2400; // ← 2000 から 2400 に変更
+                const max = 1800; // Load failed対策: サイズを抑える
                 if (w > h && w > max) { h *= max / w; w = max; }
                 else if (h > max) { w *= max / h; h = max; }
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                res(canvas.toDataURL('image/jpeg', 0.85)); // ← 品質も0.8→0.85に向上
+                res(canvas.toDataURL('image/jpeg', 0.80));
             };
             img.src = e.target.result;
         };
@@ -352,16 +352,21 @@ async function startAnalysis() {
     animateLoadSteps();
 
     try {
+        // タイムアウト: 120秒（GASの処理時間を考慮）
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000);
         const res = await fetch(GAS_ENDPOINT, {
             method: 'POST',
+            signal: controller.signal,
             body: JSON.stringify({
                 action: 'analyze',
                 mode: selectedMode,
-                exam_type: selectedExamType, // ★ 改善: 模試種別をGASに渡す
+                exam_type: selectedExamType,
                 images: uploadedFiles,
                 student_id: userId
             })
         });
+        clearTimeout(timeoutId);
         const data = await res.json();
         if (data.status === "error") throw new Error(data.message);
         aiResult = data;
@@ -370,7 +375,12 @@ async function startAnalysis() {
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-confirm').style.display = 'block';
     } catch(e) {
-        alert("解析エラー: " + e.message + "\n\n写真を撮り直すか、数値を手入力してください。");
+        const msg = e.name === 'AbortError'
+            ? "通信がタイムアウトしました。\nWi-Fiに接続してから再度お試しください。"
+            : e.message.includes("Load failed") || e.message.includes("Failed to fetch")
+            ? "通信エラーが発生しました。\nWi-Fiに接続してから再度お試しください。"
+            : "解析エラー: " + e.message + "\n\n写真を撮り直すか、数値を手入力してください。";
+        alert(msg);
         location.reload();
     }
 }
