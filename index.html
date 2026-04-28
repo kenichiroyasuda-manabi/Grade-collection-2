@@ -217,7 +217,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyibmeB0Et0ygs1j4oK_fXNn47j_juU0txWSXwDjfGH-6ul0YBxw3oTxjA0GySh5rE/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbypX7Y4vJjnLW1P6WLgBAYonyhCFi6Gjr5v7To72WyYbZxrSal8KoJXa8pqNHJpvpO7/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -352,12 +352,9 @@ async function startAnalysis() {
     animateLoadSteps();
 
     try {
-        // タイムアウト: 120秒（GASの処理時間を考慮）
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000);
-        const res = await fetch(GAS_ENDPOINT, {
+        // Step1: 解析ジョブを開始してjobIdをもらう
+        const startRes = await fetch(GAS_ENDPOINT, {
             method: 'POST',
-            signal: controller.signal,
             body: JSON.stringify({
                 action: 'analyze',
                 mode: selectedMode,
@@ -366,23 +363,50 @@ async function startAnalysis() {
                 student_id: userId
             })
         });
-        clearTimeout(timeoutId);
-        const data = await res.json();
+        const startData = await startRes.json();
+        if (startData.status === 'error') throw new Error(startData.message);
+
+        const jobId = startData.jobId;
+
+        // Step2: 結果をポーリング（5秒おき・最大3分）
+        const data = await pollResult(jobId);
         if (data.status === "error") throw new Error(data.message);
+
         aiResult = data;
         renderConfirm(aiResult);
         updateStepper(4);
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-confirm').style.display = 'block';
+
     } catch(e) {
-        const msg = e.name === 'AbortError'
-            ? "通信がタイムアウトしました。\nWi-Fiに接続してから再度お試しください。"
+        const msg = e.message.includes("タイムアウト")
+            ? "解析がタイムアウトしました。\nWi-Fiに接続して再度お試しください。"
             : e.message.includes("Load failed") || e.message.includes("Failed to fetch")
-            ? "通信エラーが発生しました。\nWi-Fiに接続してから再度お試しください。"
-            : "解析エラー: " + e.message + "\n\n写真を撮り直すか、数値を手入力してください。";
+            ? "通信エラーが発生しました。\nWi-Fiに接続して再度お試しください。"
+            : "解析エラー: " + e.message;
         alert(msg);
         location.reload();
     }
+}
+
+// ポーリング: 5秒おきにGASへ結果を問い合わせる（最大180秒）
+async function pollResult(jobId) {
+    const maxAttempts = 36; // 5秒 × 36 = 180秒
+    for (let i = 0; i < maxAttempts; i++) {
+        await new Promise(r => setTimeout(r, 5000));
+        try {
+            const res = await fetch(GAS_ENDPOINT, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'poll', jobId: jobId })
+            });
+            const data = await res.json();
+            if (data.status === 'done' || data.status === 'error') return data;
+            // pending の場合はループ継続
+        } catch(e) {
+            // 通信エラーは無視してリトライ
+        }
+    }
+    throw new Error("タイムアウト");
 }
 
 function renderConfirm(data) {
