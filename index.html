@@ -217,7 +217,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycby5zJke_wYUnG6Nx28CvvO86MXNNH78BYcygi6N8UKyidcSvg9lOQZ823FRV4GE7NPb/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxXEsy_6mDwt1--U0sbVXEdgDpC3OBltMvWj2Wip3PimsNaBdAApwJT1hbLskQxzodD/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -352,24 +352,42 @@ async function startAnalysis() {
     animateLoadSteps();
 
     try {
-        // Step1: 解析ジョブを開始してjobIdをもらう
-        const startRes = await fetch(GAS_ENDPOINT, {
+        // Step1: 画像を1枚ずつGASにアップロード → fileIdを収集
+        // （大きなbase64をJSONに含めず、小さなfileIdだけ後続で使う）
+        const fileIds = [];
+        const imageUrls = [];
+        for (let i = 0; i < uploadedFiles.length; i++) {
+            document.getElementById('load-msg').innerText = `画像をアップロード中... (${i+1}/${uploadedFiles.length})`;
+            const upRes = await fetchWithTimeout(GAS_ENDPOINT, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'upload_image',
+                    base64: uploadedFiles[i].base64,
+                    student_id: userId,
+                    index: i
+                })
+            }, 60000); // 1枚60秒
+            const upData = await upRes.json();
+            if (upData.status === 'error') throw new Error('画像アップロード失敗: ' + upData.message);
+            fileIds.push(upData.fileId);
+            imageUrls.push(upData.url);
+        }
+
+        // Step2: fileIdだけ送って解析（小さいJSON）
+        document.getElementById('load-msg').innerText = 'AIが解析しています...';
+        const res = await fetchWithTimeout(GAS_ENDPOINT, {
             method: 'POST',
             body: JSON.stringify({
                 action: 'analyze',
                 mode: selectedMode,
                 exam_type: selectedExamType,
-                images: uploadedFiles,
+                fileIds: fileIds,
+                imageUrls: imageUrls,
                 student_id: userId
             })
-        });
-        const startData = await startRes.json();
-        if (startData.status === 'error') throw new Error(startData.message);
+        }, 180000); // 解析は3分
 
-        const jobId = startData.jobId;
-
-        // Step2: 結果をポーリング（5秒おき・最大3分）
-        const data = await pollResult(jobId);
+        const data = await res.json();
         if (data.status === "error") throw new Error(data.message);
 
         aiResult = data;
@@ -379,36 +397,25 @@ async function startAnalysis() {
         document.getElementById('phase-confirm').style.display = 'block';
 
     } catch(e) {
-        const msg = e.message.includes("タイムアウト")
-            ? "解析がタイムアウトしました。\nWi-Fiに接続して再度お試しください。"
+        const msg = e.name === 'AbortError'
+            ? "タイムアウトしました。Wi-Fiに接続して再度お試しください。"
             : e.message.includes("Load failed") || e.message.includes("Failed to fetch")
-            ? "通信エラーが発生しました。\nWi-Fiに接続して再度お試しください。"
+            ? "通信エラー。Wi-Fiに接続して再度お試しください。"
             : "解析エラー: " + e.message;
         alert(msg);
         location.reload();
     }
 }
 
-// ポーリング: 5秒おきにGASへ結果を問い合わせる（最大180秒）
-async function pollResult(jobId) {
-    const maxAttempts = 36; // 5秒 × 36 = 180秒
-    for (let i = 0; i < maxAttempts; i++) {
-        await new Promise(r => setTimeout(r, 5000));
-        try {
-            const res = await fetch(GAS_ENDPOINT, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'poll', jobId: jobId })
-            });
-            const data = await res.json();
-            if (data.status === 'done' || data.status === 'error') return data;
-            // pending の場合はループ継続
-        } catch(e) {
-            // 通信エラーは無視してリトライ
-        }
-    }
-    throw new Error("タイムアウト");
+function fetchWithTimeout(url, options, ms) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), ms);
+    return fetch(url, {
+        ...options,
+        signal: controller.signal,
+        redirect: 'follow'   // ← GASのリダイレクトを正しく追跡する
+    }).finally(() => clearTimeout(id));
 }
-
 function renderConfirm(data) {
     const container = document.getElementById('score-container');
     container.innerHTML = '';
