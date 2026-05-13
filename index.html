@@ -114,13 +114,16 @@
         .picker-btn-cancel { font-size: 15px; color: #999; background: none; border: none; cursor: pointer; padding: 6px 10px; }
         .picker-btn-done { font-size: 15px; color: var(--orange); font-weight: bold; background: none; border: none; cursor: pointer; padding: 6px 10px; }
         .picker-body { display: flex; align-items: center; justify-content: center; gap: 2px; padding: 0 16px 24px; height: 220px; position: relative; }
-        .picker-center-band { position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); height: 44px; background: rgba(255,105,32,0.07); border-top: 1px solid rgba(255,105,32,0.18); border-bottom: 1px solid rgba(255,105,32,0.18); border-radius: 10px; pointer-events: none; z-index: 2; }
+        /* ハイライト帯: picker-bodyの高さ220px、上下padding0、ドラムはheight220px
+           中心 = 110px、アイテム高さ44px → top = 110 - 22 = 88px */
+        .picker-center-band { position: absolute; left: 16px; right: 16px; top: 88px; height: 44px; background: rgba(255,105,32,0.07); border-top: 1.5px solid rgba(255,105,32,0.25); border-bottom: 1.5px solid rgba(255,105,32,0.25); border-radius: 10px; pointer-events: none; z-index: 2; }
         .drum-col { flex: 1; height: 220px; overflow: hidden; position: relative; }
-        .drum-col::before { content:''; position:absolute; top:0; left:0; right:0; height:88px; background:linear-gradient(to bottom,#fff 30%,transparent); z-index:3; pointer-events:none; }
-        .drum-col::after  { content:''; position:absolute; bottom:0; left:0; right:0; height:88px; background:linear-gradient(to top,#fff 30%,transparent); z-index:3; pointer-events:none; }
+        .drum-col::before { content:''; position:absolute; top:0; left:0; right:0; height:88px; background:linear-gradient(to bottom,rgba(255,255,255,1) 20%,rgba(255,255,255,0)); z-index:3; pointer-events:none; }
+        .drum-col::after  { content:''; position:absolute; bottom:0; left:0; right:0; height:88px; background:linear-gradient(to top,rgba(255,255,255,1) 20%,rgba(255,255,255,0)); z-index:3; pointer-events:none; }
         .drum-inner { position:absolute; width:100%; will-change:transform; }
-        .drum-item { height:44px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:bold; color:#ccc; user-select:none; position:relative; z-index:4; }
-        .drum-item.active { color:#1A1A1A; font-size:28px; }
+        /* font-sizeを固定してレイアウトずれを防止、色だけで選択状態を表現 */
+        .drum-item { height:44px; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; color:#ddd; user-select:none; position:relative; z-index:4; transition: color 0.1s; }
+        .drum-item.active { color:#1A1A1A; }
         .picker-sep { font-size:26px; font-weight:bold; color:#999; flex-shrink:0; padding:0 2px; }
         /* チップUI */
         .score-chip { display:flex; align-items:center; gap:5px; background:#FFF6F2; border:1px solid #FFDCC9; border-radius:10px; padding:5px 12px; cursor:pointer; min-width:72px; }
@@ -231,8 +234,7 @@
         <div class="warning-alert-card">
             <span>⚠️</span>
             <p style="font-size: 11px; color:#A07137; line-height: 1.4;">
-                偏差値がおかしい場合は直接タップして修正できます。平均点はAI取得値をそのまま保存します。
-            </p>
+                得点、偏差値、科目、学力レベルを修正してください。            </p>
         </div>
 
         <button class="btn" style="border:1px solid var(--red); color:var(--red); background:none; margin-top:15px; font-size:14px; border-radius: 8px;" onclick="retakePhotos()">🗑 画像を撮り直す</button>
