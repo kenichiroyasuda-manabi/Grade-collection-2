@@ -622,6 +622,10 @@ function openPickerFromRow(wrapEl, type) {
     }
 
     document.getElementById('picker-overlay').style.display = 'flex';
+    // 背景スクロールを止める
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
 }
 
 function addDrumCol(parent) {
@@ -671,6 +675,7 @@ function makeDrum(el, values, initVal) {
     let startY2 = 0, startOff2 = 0;
     el.addEventListener('touchstart', e => { startY2 = e.touches[0].clientY; startOff2 = offset; }, {passive:true});
     el.addEventListener('touchmove', e => {
+        e.stopPropagation();
         const dy = e.touches[0].clientY - startY2;
         setOffset(startOff2 + dy, false);
     }, {passive:true});
@@ -688,6 +693,10 @@ function makeDrum(el, values, initVal) {
 }
 
 function closePicker(apply) {
+    // 背景スクロールを復元
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
     if (apply && pickerWrap) {
         if (pickerType === 'score') {
             const val = Math.min(
