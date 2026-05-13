@@ -108,16 +108,14 @@
 
         /* ドラムロールピッカー */
         .picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; display: flex; align-items: flex-end; transition: opacity 0.2s; }
-        .picker-sheet { width: 100%; background: #fff; border-radius: 20px 20px 0 0; padding-bottom: env(safe-area-inset-bottom,16px); }
+        .picker-sheet { width: 100%; background: #fff; border-radius: 20px 20px 0 0; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); }
         .picker-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px 10px; border-bottom: 0.5px solid #f0f0f0; }
         .picker-title { font-size: 15px; font-weight: bold; color: #1A1A1A; }
         .picker-btn-cancel { font-size: 15px; color: #999; background: none; border: none; cursor: pointer; padding: 6px 10px; }
         .picker-btn-done { font-size: 15px; color: var(--orange); font-weight: bold; background: none; border: none; cursor: pointer; padding: 6px 10px; }
-        .picker-body { display: flex; align-items: center; justify-content: center; gap: 2px; padding: 0 16px 24px; height: 220px; position: relative; }
-        /* ハイライト帯: picker-bodyの高さ220px、上下padding0、ドラムはheight220px
-           中心 = 110px、アイテム高さ44px → top = 110 - 22 = 88px */
-        .picker-center-band { position: absolute; left: 16px; right: 16px; top: 88px; height: 44px; background: rgba(255,105,32,0.07); border-top: 1.5px solid rgba(255,105,32,0.25); border-bottom: 1.5px solid rgba(255,105,32,0.25); border-radius: 10px; pointer-events: none; z-index: 2; }
-        .drum-col { flex: 1; height: 220px; overflow: hidden; position: relative; }
+        .picker-body { display: flex; align-items: stretch; justify-content: center; gap: 2px; padding: 0 16px; height: 220px; position: relative; box-sizing: border-box; }
+        .picker-center-band { position: absolute; left: 16px; right: 16px; height: 44px; background: rgba(255,105,32,0.07); border-top: 1.5px solid rgba(255,105,32,0.25); border-bottom: 1.5px solid rgba(255,105,32,0.25); border-radius: 10px; pointer-events: none; z-index: 2; }
+        .drum-col { flex: 1; height: 100%; overflow: hidden; position: relative; }
         .drum-col::before { content:''; position:absolute; top:0; left:0; right:0; height:88px; background:linear-gradient(to bottom,rgba(255,255,255,1) 20%,rgba(255,255,255,0)); z-index:3; pointer-events:none; }
         .drum-col::after  { content:''; position:absolute; bottom:0; left:0; right:0; height:88px; background:linear-gradient(to top,rgba(255,255,255,1) 20%,rgba(255,255,255,0)); z-index:3; pointer-events:none; }
         .drum-inner { position:absolute; width:100%; will-change:transform; }
@@ -616,12 +614,12 @@ function openPickerFromRow(wrapEl, type) {
         const dC = addDrumCol(body); drumsState.push(makeDrum(dC, [0,1,2,3,4,5,6,7,8,9], cur%10));
     } else {
         const cur = parseFloat(wrapEl.querySelector('.input-deviation-raw').value) || 50.0;
-        const intV = Math.min(80, Math.max(20, Math.round(cur)));
-        const decV = Math.round((cur - Math.floor(cur)) * 10) >= 5 ? 5 : 0;
+        const intV = Math.min(80, Math.max(20, Math.floor(cur)));
+        const decV = Math.round((cur - Math.floor(cur)) * 10);
         title.textContent = '偏差値を選択';
         const dA = addDrumCol(body); drumsState.push(makeDrum(dA, Array.from({length:61},(_,i)=>i+20), intV));
         body.insertAdjacentHTML('beforeend','<span class="picker-sep">.</span>');
-        const dB = addDrumCol(body); drumsState.push(makeDrum(dB, [0,5], decV));
+        const dB = addDrumCol(body); drumsState.push(makeDrum(dB, [0,1,2,3,4,5,6,7,8,9], decV));
     }
 
     document.getElementById('picker-overlay').style.display = 'flex';
@@ -629,6 +627,19 @@ function openPickerFromRow(wrapEl, type) {
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
     document.body.style.width = '100%';
+
+    // center-bandをdrum-colの実際の中央に合わせる（描画後に計算）
+    requestAnimationFrame(() => {
+        const pickerBody = document.getElementById('picker-body');
+        const firstDrum = pickerBody.querySelector('.drum-col');
+        if (firstDrum && pickerBody) {
+            const bodyRect = pickerBody.getBoundingClientRect();
+            const drumRect = firstDrum.getBoundingClientRect();
+            const centerY = drumRect.top + drumRect.height / 2 - bodyRect.top;
+            const band = pickerBody.querySelector('.picker-center-band');
+            if (band) band.style.top = (centerY - 22) + 'px';
+        }
+    });
 }
 
 function addDrumCol(parent) {
