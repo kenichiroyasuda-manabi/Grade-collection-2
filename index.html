@@ -217,7 +217,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxXEsy_6mDwt1--U0sbVXEdgDpC3OBltMvWj2Wip3PimsNaBdAApwJT1hbLskQxzodD/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwt09zl66NHDYIx6HlsR1glYMhSYqRRg9qCCQUogWCwnDK1PTnwNpvIJHUd9SxQ3zBv/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -352,40 +352,16 @@ async function startAnalysis() {
     animateLoadSteps();
 
     try {
-        // Step1: 画像を1枚ずつGASにアップロード → fileIdを収集
-        // （大きなbase64をJSONに含めず、小さなfileIdだけ後続で使う）
-        const fileIds = [];
-        const imageUrls = [];
-        for (let i = 0; i < uploadedFiles.length; i++) {
-            document.getElementById('load-msg').innerText = `画像をアップロード中... (${i+1}/${uploadedFiles.length})`;
-            const upRes = await fetchWithTimeout(GAS_ENDPOINT, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'upload_image',
-                    base64: uploadedFiles[i].base64,
-                    student_id: userId,
-                    index: i
-                })
-            }, 60000); // 1枚60秒
-            const upData = await upRes.json();
-            if (upData.status === 'error') throw new Error('画像アップロード失敗: ' + upData.message);
-            fileIds.push(upData.fileId);
-            imageUrls.push(upData.url);
-        }
-
-        // Step2: fileIdだけ送って解析（小さいJSON）
-        document.getElementById('load-msg').innerText = 'AIが解析しています...';
         const res = await fetchWithTimeout(GAS_ENDPOINT, {
             method: 'POST',
             body: JSON.stringify({
                 action: 'analyze',
                 mode: selectedMode,
                 exam_type: selectedExamType,
-                fileIds: fileIds,
-                imageUrls: imageUrls,
+                images: uploadedFiles,   // base64を直接送信（シンプル方式）
                 student_id: userId
             })
-        }, 180000); // 解析は3分
+        }, 180000); // 3分
 
         const data = await res.json();
         if (data.status === "error") throw new Error(data.message);
