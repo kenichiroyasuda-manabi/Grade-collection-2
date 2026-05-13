@@ -107,23 +107,31 @@
         .btn-custom-toggle { font-size: 10px; color: var(--orange); background: none; border: none; cursor: pointer; padding: 0; text-align: left; white-space: nowrap; }
 
         /* ドラムロールピッカー */
-        .picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; display: flex; align-items: flex-end; }
-        .picker-sheet { width: 100%; background: #fff; border-radius: 20px 20px 0 0; padding-bottom: env(safe-area-inset-bottom); }
-        .picker-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 10px; border-bottom: 1px solid #f0f0f0; }
+        .picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; display: flex; align-items: flex-end; transition: opacity 0.2s; }
+        .picker-sheet { width: 100%; background: #fff; border-radius: 20px 20px 0 0; padding-bottom: env(safe-area-inset-bottom,16px); }
+        .picker-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px 10px; border-bottom: 0.5px solid #f0f0f0; }
         .picker-title { font-size: 15px; font-weight: bold; color: #1A1A1A; }
-        .picker-btn-cancel { font-size: 15px; color: #999; background: none; border: none; cursor: pointer; padding: 4px 8px; }
-        .picker-btn-done { font-size: 15px; color: var(--orange); font-weight: bold; background: none; border: none; cursor: pointer; padding: 4px 8px; }
-        .picker-body { display: flex; justify-content: center; align-items: center; gap: 4px; padding: 10px 20px 20px; }
-        .drum { width: 90px; overflow: hidden; height: 216px; position: relative; cursor: grab; }
-        .drum.deviation-drum { width: 110px; }
-        .drum::before, .drum::after { content: ''; position: absolute; left: 0; right: 0; height: 86px; z-index: 2; pointer-events: none; }
-        .drum::before { top: 0; background: linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0)); }
-        .drum::after { bottom: 0; background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0)); }
-        .drum-highlight { position: absolute; top: 50%; transform: translateY(-50%); left: 0; right: 0; height: 44px; background: #FFF2E8; border-radius: 10px; z-index: 1; pointer-events: none; }
-        .drum-list { position: absolute; width: 100%; transition: transform 0.15s ease-out; }
-        .drum-item { height: 44px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: #ccc; transition: color 0.15s, font-size 0.15s; user-select: none; position: relative; z-index: 3; }
-        .drum-item.selected { color: #1A1A1A; font-size: 24px; }
-        .picker-sep { font-size: 22px; font-weight: bold; color: #ccc; margin-top: 4px; }
+        .picker-btn-cancel { font-size: 15px; color: #999; background: none; border: none; cursor: pointer; padding: 6px 10px; }
+        .picker-btn-done { font-size: 15px; color: var(--orange); font-weight: bold; background: none; border: none; cursor: pointer; padding: 6px 10px; }
+        .picker-body { display: flex; align-items: center; justify-content: center; gap: 2px; padding: 0 16px 24px; height: 220px; position: relative; }
+        .picker-center-band { position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); height: 44px; background: rgba(255,105,32,0.07); border-top: 1px solid rgba(255,105,32,0.18); border-bottom: 1px solid rgba(255,105,32,0.18); border-radius: 10px; pointer-events: none; z-index: 2; }
+        .drum-col { flex: 1; height: 220px; overflow: hidden; position: relative; }
+        .drum-col::before { content:''; position:absolute; top:0; left:0; right:0; height:88px; background:linear-gradient(to bottom,#fff 30%,transparent); z-index:3; pointer-events:none; }
+        .drum-col::after  { content:''; position:absolute; bottom:0; left:0; right:0; height:88px; background:linear-gradient(to top,#fff 30%,transparent); z-index:3; pointer-events:none; }
+        .drum-inner { position:absolute; width:100%; will-change:transform; }
+        .drum-item { height:44px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:bold; color:#ccc; user-select:none; position:relative; z-index:4; }
+        .drum-item.active { color:#1A1A1A; font-size:28px; }
+        .picker-sep { font-size:26px; font-weight:bold; color:#999; flex-shrink:0; padding:0 2px; }
+        /* チップUI */
+        .score-chip { display:flex; align-items:center; gap:5px; background:#FFF6F2; border:1px solid #FFDCC9; border-radius:10px; padding:5px 12px; cursor:pointer; min-width:72px; }
+        .score-chip:active { background:#FFE8D9; }
+        .score-chip-label { font-size:10px; color:#CC6622; line-height:1; margin-bottom:2px; }
+        .score-chip-val { font-size:20px; font-weight:bold; color:#1A1A1A; line-height:1; }
+        .score-chip-max { font-size:11px; color:#ccc; }
+        .dev-chip { display:flex; align-items:center; gap:5px; background:#F5F0FF; border:1px solid #C7C2EE; border-radius:10px; padding:5px 12px; cursor:pointer; min-width:64px; }
+        .dev-chip:active { background:#EBE4FF; }
+        .dev-chip-label { font-size:10px; color:#7B68CC; line-height:1; margin-bottom:2px; }
+        .dev-chip-val { font-size:20px; font-weight:bold; color:#5149B4; line-height:1; }
     </style>
 </head>
 <body>
@@ -250,12 +258,14 @@
       <span class="picker-title" id="picker-title">得点を選択</span>
       <button class="picker-btn-done" onclick="closePicker(true)">完了</button>
     </div>
-    <div class="picker-body" id="picker-body"></div>
+    <div class="picker-body" id="picker-body">
+      <div class="picker-center-band"></div>
+    </div>
   </div>
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzsvnJK2_P-tlWGJeA-j4UhwkDFjd0ywh_ij9fuFAB3-ylTcD4TdnyAgtRYUTqyH9k/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxXEsy_6mDwt1--U0sbVXEdgDpC3OBltMvWj2Wip3PimsNaBdAApwJT1hbLskQxzodD/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -519,19 +529,23 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
         <div class="card-content">
             <div class="card-header">
                 ${subjectHtml}
-                <div class="score-input-area" onclick="openPickerFromRow(this, 'score')">
-                    <input type="number" class="input-score-rich input-score" value="${score || ''}" placeholder="?" readonly
-                        style="pointer-events:none;" data-max="${maxScoreVal}">
-                    <span>/</span>
-                    <span class="input-max-score-rich input-max-score" style="color:#ccc;font-size:14px;">${maxScoreVal}</span>
+                <div class="score-chip" onclick="openPickerFromRow(this,'score')">
+                    <div>
+                        <div class="score-chip-label">得点</div>
+                        <div class="score-chip-val input-score">${score || '--'}</div>
+                    </div>
+                    <span class="score-chip-max">/${maxScoreVal}</span>
+                    <input type="hidden" class="input-score-raw input-score-num" value="${score || ''}">
                     <input type="hidden" class="input-max-score" value="${maxScoreVal}">
                 </div>
             </div>
             <div class="card-details">
-                <div class="deviation-wrap" onclick="openPickerFromRow(this, 'deviation')">
-                    <span class="deviation-label">偏差値</span>
-                    <input type="number" step="0.1" class="input-deviation" value="${deviation ? parseFloat(deviation).toFixed(1) : ''}" placeholder="--" readonly
-                        style="pointer-events:none;">
+                <div class="dev-chip" onclick="openPickerFromRow(this,'deviation')">
+                    <div>
+                        <div class="dev-chip-label">偏差値</div>
+                        <div class="dev-chip-val input-deviation">${deviation ? parseFloat(deviation).toFixed(1) : '--'}</div>
+                    </div>
+                    <input type="hidden" class="input-deviation-raw" value="${deviation ? parseFloat(deviation).toFixed(1) : ''}">
                 </div>
                 ${levelHtml}
                 <input type="hidden" class="input-average" value="${average_score ? parseFloat(average_score).toFixed(1) : ''}">
@@ -551,7 +565,7 @@ function updateLevelClass(el) {
 
 function calculateTotalScore() {
     let total = 0;
-    document.querySelectorAll('.input-score').forEach(input => { total += (parseInt(input.value) || 0); });
+    document.querySelectorAll('.input-score-num').forEach(input => { total += (parseInt(input.value) || 0); });
     const totalInput = document.getElementById('total-score-value');
     if (totalInput) {
         totalInput.value = total;
@@ -562,9 +576,9 @@ function calculateTotalScore() {
 function addBlankRow() { addRow('', '', '', '', '', '', {}); }
 
 // ── ドラムロールピッカー ──────────────────────────────
-let pickerTarget = null;   // 現在編集中の input 要素
-let pickerType = null;     // 'score' | 'deviation'
-let drums = [];            // 各桁のドラムオブジェクト
+const ITEM_H = 44, PAD = 2;
+let pickerWrap = null, pickerType = null;
+let drumsState = [];
 
 function toggleCustomSubject(selectEl) {
     const customInput = selectEl.closest('.subject-wrap').querySelector('.input-subject-custom');
@@ -578,155 +592,118 @@ function toggleCustomSubject(selectEl) {
 }
 
 function openPickerFromRow(wrapEl, type) {
-    const row = wrapEl.closest('.score-row');
-    if (type === 'score') {
-        const inputEl = wrapEl.querySelector('.input-score');
-        const maxVal = parseInt(wrapEl.querySelector('.input-max-score[type="hidden"]').value) || 200;
-        openPicker(inputEl, 'score', maxVal);
-    } else {
-        const inputEl = wrapEl.querySelector('.input-deviation');
-        openPicker(inputEl, 'deviation', null);
-    }
-}
-
-function openPicker(inputEl, type, maxVal) {
-    pickerTarget = inputEl;
+    pickerWrap = wrapEl;
     pickerType = type;
-    const overlay = document.getElementById('picker-overlay');
     const body = document.getElementById('picker-body');
     const title = document.getElementById('picker-title');
-
-    title.textContent = type === 'score' ? '得点を選択' : '偏差値を選択';
+    // center-band を残して中身だけクリア
+    const band = body.querySelector('.picker-center-band');
     body.innerHTML = '';
-    drums = [];
+    if (band) body.appendChild(band);
+    drumsState = [];
 
     if (type === 'score') {
-        // 得点: 3桁 (0-maxVal)
-        const cur = parseInt(inputEl.value) || 0;
-        const h = Math.floor(cur / 100);
-        const t = Math.floor((cur % 100) / 10);
-        const o = cur % 10;
+        const cur = parseInt(wrapEl.querySelector('.input-score-num').value) || 0;
+        const maxVal = parseInt(wrapEl.querySelector('.input-max-score').value) || 200;
         const maxH = Math.floor(maxVal / 100);
-        drums.push(createDrum(Array.from({length: maxH + 1}, (_, i) => i), h, false));
-        body.appendChild(drums[0].el);
-        body.insertAdjacentHTML('beforeend', '<span class="picker-sep"></span>');
-        drums.push(createDrum([0,1,2,3,4,5,6,7,8,9], t, false));
-        body.appendChild(drums[1].el);
-        drums.push(createDrum([0,1,2,3,4,5,6,7,8,9], o, false));
-        body.appendChild(drums[2].el);
+        title.textContent = '得点を選択';
+        const dA = addDrumCol(body); drumsState.push(makeDrum(dA, Array.from({length: maxH+1},(_,i)=>i), Math.floor(cur/100)));
+        body.insertAdjacentHTML('beforeend','<span class="picker-sep"></span>');
+        const dB = addDrumCol(body); drumsState.push(makeDrum(dB, [0,1,2,3,4,5,6,7,8,9], Math.floor((cur%100)/10)));
+        const dC = addDrumCol(body); drumsState.push(makeDrum(dC, [0,1,2,3,4,5,6,7,8,9], cur%10));
     } else {
-        // 偏差値: 整数部(20-80) + 小数部(0,5)
-        const cur = parseFloat(inputEl.value) || 50.0;
-        const intPart = Math.round(cur);
-        const decPart = Math.round((cur - intPart) * 10) >= 5 ? 5 : 0;
-        const intVals = Array.from({length: 61}, (_, i) => i + 20); // 20〜80
-        drums.push(createDrum(intVals, intPart, true));
-        body.appendChild(drums[0].el);
-        body.insertAdjacentHTML('beforeend', '<span class="picker-sep">.</span>');
-        drums.push(createDrum([0, 5], decPart, false));
-        body.appendChild(drums[1].el);
+        const cur = parseFloat(wrapEl.querySelector('.input-deviation-raw').value) || 50.0;
+        const intV = Math.min(80, Math.max(20, Math.round(cur)));
+        const decV = Math.round((cur - Math.floor(cur)) * 10) >= 5 ? 5 : 0;
+        title.textContent = '偏差値を選択';
+        const dA = addDrumCol(body); drumsState.push(makeDrum(dA, Array.from({length:61},(_,i)=>i+20), intV));
+        body.insertAdjacentHTML('beforeend','<span class="picker-sep">.</span>');
+        const dB = addDrumCol(body); drumsState.push(makeDrum(dB, [0,5], decV));
     }
 
-    overlay.style.display = 'flex';
-    requestAnimationFrame(() => overlay.style.opacity = '1');
+    document.getElementById('picker-overlay').style.display = 'flex';
 }
 
-function createDrum(values, selectedVal, isDeviation) {
-    const el = document.createElement('div');
-    el.className = 'drum' + (isDeviation ? ' deviation-drum' : '');
+function addDrumCol(parent) {
+    const col = document.createElement('div');
+    col.className = 'drum-col';
+    parent.appendChild(col);
+    return col;
+}
 
-    const highlight = document.createElement('div');
-    highlight.className = 'drum-highlight';
-    el.appendChild(highlight);
+function makeDrum(el, values, initVal) {
+    const inner = document.createElement('div');
+    inner.className = 'drum-inner';
+    for (let i = 0; i < PAD; i++) inner.insertAdjacentHTML('beforeend','<div class="drum-item"></div>');
+    values.forEach(v => inner.insertAdjacentHTML('beforeend',`<div class="drum-item">${v}</div>`));
+    for (let i = 0; i < PAD; i++) inner.insertAdjacentHTML('beforeend','<div class="drum-item"></div>');
+    el.appendChild(inner);
 
-    const list = document.createElement('div');
-    list.className = 'drum-list';
+    let idx = values.indexOf(initVal); if (idx < 0) idx = 0;
+    let offset = -idx * ITEM_H;
+    let vel = 0, lastY = 0, lastT = 0, rafId = null;
 
-    // パディング（上下に空アイテムを追加して中央揃え）
-    const PADDING = 2;
-    for (let p = 0; p < PADDING; p++) {
-        const pad = document.createElement('div');
-        pad.className = 'drum-item';
-        list.appendChild(pad);
+    function setOffset(o, animate) {
+        const min = -(values.length-1)*ITEM_H;
+        offset = Math.max(min, Math.min(0, o));
+        inner.style.transition = animate ? 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)' : 'none';
+        inner.style.transform = `translateY(${offset + PAD*ITEM_H}px)`;
+        const ci = Math.max(0, Math.min(values.length-1, Math.round(-offset/ITEM_H)));
+        inner.querySelectorAll('.drum-item').forEach((item,i) => item.classList.toggle('active', i === ci+PAD));
     }
-    values.forEach(v => {
-        const item = document.createElement('div');
-        item.className = 'drum-item' + (v === selectedVal ? ' selected' : '');
-        item.textContent = v;
-        list.appendChild(item);
-    });
-    for (let p = 0; p < PADDING; p++) {
-        const pad = document.createElement('div');
-        pad.className = 'drum-item';
-        list.appendChild(pad);
-    }
-    el.appendChild(list);
-
-    const ITEM_H = 44;
-    let selectedIdx = values.indexOf(selectedVal);
-    if (selectedIdx < 0) selectedIdx = 0;
-    let currentOffset = -selectedIdx * ITEM_H;
-    list.style.transform = 'translateY(' + (currentOffset + PADDING * ITEM_H) + 'px)';
-    updateDrumSelected(list, selectedIdx + PADDING);
-
-    // タッチ操作
-    let startY = 0, startOffset = 0, isDragging = false;
+    setOffset(offset, false);
 
     el.addEventListener('touchstart', e => {
-        startY = e.touches[0].clientY;
-        startOffset = currentOffset;
-        isDragging = true;
-        list.style.transition = 'none';
-    }, { passive: true });
+        if (rafId) cancelAnimationFrame(rafId);
+        lastY = e.touches[0].clientY; lastT = Date.now(); vel = 0;
+        inner.style.transition = 'none';
+    }, {passive:true});
 
     el.addEventListener('touchmove', e => {
-        if (!isDragging) return;
-        const dy = e.touches[0].clientY - startY;
-        const raw = startOffset + dy;
-        const minOffset = -(values.length - 1) * ITEM_H;
-        currentOffset = Math.max(minOffset, Math.min(0, raw));
-        list.style.transform = 'translateY(' + (currentOffset + PADDING * ITEM_H) + 'px)';
-    }, { passive: true });
+        const y = e.touches[0].clientY, now = Date.now();
+        const dt = now - lastT;
+        vel = dt > 0 ? (y - lastY) / dt : 0;
+        lastY = y; lastT = now;
+        setOffset(offset + (y - lastY + (y - lastY)), false); // delta only once
+    }, {passive:true});
+
+    // fix touchmove: track from start
+    let startY2 = 0, startOff2 = 0;
+    el.addEventListener('touchstart', e => { startY2 = e.touches[0].clientY; startOff2 = offset; }, {passive:true});
+    el.addEventListener('touchmove', e => {
+        const dy = e.touches[0].clientY - startY2;
+        setOffset(startOff2 + dy, false);
+    }, {passive:true});
 
     el.addEventListener('touchend', () => {
-        isDragging = false;
-        list.style.transition = 'transform 0.15s ease-out';
-        const idx = Math.round(-currentOffset / ITEM_H);
-        const clampedIdx = Math.max(0, Math.min(values.length - 1, idx));
-        currentOffset = -clampedIdx * ITEM_H;
-        list.style.transform = 'translateY(' + (currentOffset + PADDING * ITEM_H) + 'px)';
-        updateDrumSelected(list, clampedIdx + PADDING);
+        const momentum = vel * 100;
+        const target = offset + momentum;
+        const snapped = -Math.round(-target/ITEM_H) * ITEM_H;
+        const min = -(values.length-1)*ITEM_H;
+        setOffset(Math.max(min, Math.min(0, snapped)), true);
+        setTimeout(() => setOffset(-Math.round(-offset/ITEM_H)*ITEM_H, true), 320);
     });
 
-    return { el, list, values, getSelected: () => {
-        const idx = Math.round(-currentOffset / ITEM_H);
-        return values[Math.max(0, Math.min(values.length - 1, idx))];
-    }};
-}
-
-function updateDrumSelected(list, selectedIdx) {
-    list.querySelectorAll('.drum-item').forEach((item, i) => {
-        item.classList.toggle('selected', i === selectedIdx);
-    });
+    return { getVal: () => values[Math.max(0, Math.min(values.length-1, Math.round(-offset/ITEM_H)))] };
 }
 
 function closePicker(apply) {
-    if (apply && pickerTarget) {
+    if (apply && pickerWrap) {
         if (pickerType === 'score') {
-            const h = drums[0].getSelected();
-            const t = drums[1].getSelected();
-            const o = drums[2].getSelected();
-            const val = h * 100 + t * 10 + o;
-            pickerTarget.value = val;
-            pickerTarget.dispatchEvent(new Event('input'));
+            const val = Math.min(
+                parseInt(pickerWrap.querySelector('.input-max-score').value) || 200,
+                drumsState[0].getVal()*100 + drumsState[1].getVal()*10 + drumsState[2].getVal()
+            );
+            pickerWrap.querySelector('.input-score').textContent = val;
+            pickerWrap.querySelector('.input-score-num').value = val;
+            calculateTotalScore();
         } else {
-            const intPart = drums[0].getSelected();
-            const decPart = drums[1].getSelected();
-            pickerTarget.value = (intPart + decPart / 10).toFixed(1);
+            const v = (drumsState[0].getVal() + drumsState[1].getVal()/10).toFixed(1);
+            pickerWrap.querySelector('.input-deviation').textContent = v;
+            pickerWrap.querySelector('.input-deviation-raw').value = v;
         }
     }
     document.getElementById('picker-overlay').style.display = 'none';
-    pickerTarget = null;
 }
 
 async function finalSubmit() {
@@ -741,15 +718,15 @@ async function finalSubmit() {
         const sub = selectEl.value === '__custom__'
             ? (customEl.value.trim() || '')
             : selectEl.value;
-        const sco = row.querySelector('.input-score').value;
+        const sco = row.querySelector('.input-score-num').value;
         if (sub) {
             const hasChanged = (sub !== row.dataset.originalSubject) || (sco != row.dataset.originalScore);
             finalScores.push({
                 ...JSON.parse(row.dataset.metadata || '{}'),
                 subject: sub,
-                score: parseInt(sco) || 0,
+                score: parseInt(row.querySelector('.input-score-num').value) || 0,
                 max_score: parseInt(row.querySelector('.input-max-score').value) || 0,
-                deviation: parseFloat(row.querySelector('.input-deviation').value) || null,
+                deviation: parseFloat(row.querySelector('.input-deviation-raw').value) || null,
                 average_score: parseFloat(row.querySelector('.input-average').value) || null,
                 level: row.querySelector('.input-level').value || null,
                 is_edited: hasChanged
