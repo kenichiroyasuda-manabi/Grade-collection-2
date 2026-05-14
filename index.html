@@ -98,9 +98,7 @@
         .exam-name-input-wrap label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-bottom: 6px; }
         .exam-name-input { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; font-size: 15px; outline: none; background: #fff; transition: border-color 0.2s; }
         .exam-name-input:focus { border-color: var(--orange); }
-        .exam-name-suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-        .exam-name-tag { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: #fff; color: #555; cursor: pointer; transition: 0.15s; }
-        .exam-name-tag:active { background: #FFF3EC; border-color: var(--orange); color: var(--orange); }
+
 
         /* 科目自由入力 */
         .subject-wrap { display: flex; flex-direction: column; flex: 1; gap: 4px; }
@@ -170,17 +168,14 @@
     <div class="card">
         <h3 id="mode-title" style="margin-bottom:12px; color:var(--orange); font-size:18px;"></h3>
 
-        <!-- 模試名入力 -->
+        <!-- 模試名・実施時期入力 -->
         <div class="exam-name-input-wrap">
             <label>模試名・テスト名</label>
-            <input type="text" id="manual-exam-name" class="exam-name-input" placeholder="例：2024年度 第2回 全統共通テスト模試">
-            <div class="exam-name-suggestions">
-                <span class="exam-name-tag" onclick="setExamName(this)">全統共通テスト模試</span>
-                <span class="exam-name-tag" onclick="setExamName(this)">全統記述模試</span>
-                <span class="exam-name-tag" onclick="setExamName(this)">進研模試</span>
-                <span class="exam-name-tag" onclick="setExamName(this)">駿台模試</span>
-                <span class="exam-name-tag" onclick="setExamName(this)">共通テスト本番</span>
-            </div>
+            <input type="text" id="manual-exam-name" class="exam-name-input" placeholder="例：全統共通テスト模試">
+        </div>
+        <div class="exam-name-input-wrap">
+            <label>実施時期</label>
+            <input type="text" id="manual-exam-date" class="exam-name-input" placeholder="例：2024年11月">
         </div>
 
         <!-- 撮影ガイド -->
@@ -272,7 +267,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzQhXBc6yxv4UjzsS9M4JxkXNbigRfyIG4bQ3dVdOshkKZJMWUqE-dQd9sMZK1V3aw/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxXEsy_6mDwt1--U0sbVXEdgDpC3OBltMvWj2Wip3PimsNaBdAApwJT1hbLskQxzodD/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -445,9 +440,11 @@ async function startAnalysis() {
             }
         }
 
-        // 手入力の模試名があれば優先して使う
+        // 手入力の模試名・実施時期があれば優先して使う
         const manualName = document.getElementById('manual-exam-name').value.trim();
+        const manualDate = document.getElementById('manual-exam-date').value.trim();
         if (manualName) data.exam_name = manualName;
+        if (manualDate) data.exam_date = manualDate;
         aiResult = data;
         renderConfirm(aiResult);
         updateStepper(4);
@@ -613,12 +610,6 @@ function addBlankRow() { addRow('', '', '', '', '', '', {}); }
 const ITEM_H = 44, PAD = 2;
 let pickerWrap = null, pickerType = null;
 let drumsState = [];
-
-function setExamName(tagEl) {
-    const input = document.getElementById('manual-exam-name');
-    input.value = tagEl.textContent;
-    input.focus();
-}
 
 function toggleCustomSubject(selectEl) {
     const customInput = selectEl.closest('.subject-wrap').querySelector('.input-subject-custom');
