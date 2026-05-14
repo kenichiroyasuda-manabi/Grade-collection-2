@@ -116,7 +116,7 @@
         /* drum-inner: top=0 から開始、transform で動かす */
         .drum-inner { position:absolute; top:0; left:0; width:100%; will-change:transform; }
         .drum-item { height:44px; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; color:#ddd; user-select:none; position:relative; z-index:4; transition: color 0.1s; }
-        .drum-item.active { color:#1A1A1A; }
+        .drum-item.active { color:#FF6920; font-weight:900; }
         .picker-sep { font-size:26px; font-weight:bold; color:#999; flex-shrink:0; padding:0 2px; align-self:center; }
         /* チップUI */
         .score-chip { display:flex; align-items:center; gap:5px; background:#FFF6F2; border:1px solid #FFDCC9; border-radius:10px; padding:5px 12px; cursor:pointer; min-width:72px; }
@@ -598,12 +598,32 @@ function openPickerFromRow(wrapEl, type) {
     if (type === 'score') {
         const cur = parseInt(wrapEl.querySelector('.input-score-num').value) || 0;
         const maxVal = parseInt(wrapEl.querySelector('.input-max-score').value) || 200;
-        const maxH = Math.floor(maxVal / 100);
         title.textContent = '得点を選択';
-        const dA = addDrumCol(body); drumsState.push(makeDrum(dA, Array.from({length: maxH+1},(_,i)=>i), Math.floor(cur/100)));
-        body.insertAdjacentHTML('beforeend','<span class="picker-sep"></span>');
-        const dB = addDrumCol(body); drumsState.push(makeDrum(dB, [0,1,2,3,4,5,6,7,8,9], Math.floor((cur%100)/10)));
-        const dC = addDrumCol(body); drumsState.push(makeDrum(dC, [0,1,2,3,4,5,6,7,8,9], cur%10));
+
+        if (maxVal <= 100) {
+            // 満点100以下: 10の位（0〜maxの十の位）と1の位（0〜9）の2ドラム
+            const maxT = Math.floor(maxVal / 10);
+            const dA = addDrumCol(body);
+            drumsState.push(makeDrum(dA, Array.from({length: maxT+1}, (_,i) => i), Math.floor(cur/10)));
+            body.insertAdjacentHTML('beforeend','<span class="picker-sep"></span>');
+            const dB = addDrumCol(body);
+            drumsState.push(makeDrum(dB, [0,1,2,3,4,5,6,7,8,9], cur % 10));
+            // closePicker用に満点情報を保持
+            body.dataset.maxVal = maxVal;
+            body.dataset.mode = '2drum';
+        } else {
+            // 満点200: 100の位（0〜2）・10の位（0〜9）・1の位（0〜9）の3ドラム
+            const maxH = Math.floor(maxVal / 100);
+            const dA = addDrumCol(body);
+            drumsState.push(makeDrum(dA, Array.from({length: maxH+1}, (_,i) => i), Math.floor(cur/100)));
+            body.insertAdjacentHTML('beforeend','<span class="picker-sep"></span>');
+            const dB = addDrumCol(body);
+            drumsState.push(makeDrum(dB, [0,1,2,3,4,5,6,7,8,9], Math.floor((cur%100)/10)));
+            const dC = addDrumCol(body);
+            drumsState.push(makeDrum(dC, [0,1,2,3,4,5,6,7,8,9], cur % 10));
+            body.dataset.maxVal = maxVal;
+            body.dataset.mode = '3drum';
+        }
     } else {
         const cur = parseFloat(wrapEl.querySelector('.input-deviation-raw').value) || 50.0;
         const intV = Math.min(80, Math.max(20, Math.floor(cur)));
@@ -699,10 +719,11 @@ function closePicker(apply) {
     document.body.style.width = '';
     if (apply && pickerWrap) {
         if (pickerType === 'score') {
-            const val = Math.min(
-                parseInt(pickerWrap.querySelector('.input-max-score').value) || 200,
-                drumsState[0].getVal()*100 + drumsState[1].getVal()*10 + drumsState[2].getVal()
-            );
+            const maxVal = parseInt(pickerWrap.querySelector('.input-max-score').value) || 200;
+            const raw = drumsState.length === 2
+                ? drumsState[0].getVal() * 10 + drumsState[1].getVal()
+                : drumsState[0].getVal() * 100 + drumsState[1].getVal() * 10 + drumsState[2].getVal();
+            const val = Math.min(maxVal, raw);
             pickerWrap.querySelector('.input-score').textContent = val;
             pickerWrap.querySelector('.input-score-num').value = val;
             calculateTotalScore();
