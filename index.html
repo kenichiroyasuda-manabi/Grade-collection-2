@@ -113,16 +113,18 @@
         .picker-title { font-size: 15px; font-weight: bold; color: #1A1A1A; }
         .picker-btn-cancel { font-size: 15px; color: #999; background: none; border: none; cursor: pointer; padding: 6px 10px; }
         .picker-btn-done { font-size: 15px; color: var(--orange); font-weight: bold; background: none; border: none; cursor: pointer; padding: 6px 10px; }
-        .picker-body { display: flex; align-items: stretch; justify-content: center; gap: 2px; padding: 0 16px; height: 220px; position: relative; box-sizing: border-box; }
-        .picker-center-band { position: absolute; left: 16px; right: 16px; height: 44px; background: rgba(255,105,32,0.07); border-top: 1.5px solid rgba(255,105,32,0.25); border-bottom: 1.5px solid rgba(255,105,32,0.25); border-radius: 10px; pointer-events: none; z-index: 2; }
-        .drum-col { flex: 1; height: 100%; overflow: hidden; position: relative; }
-        .drum-col::before { content:''; position:absolute; top:0; left:0; right:0; height:88px; background:linear-gradient(to bottom,rgba(255,255,255,1) 20%,rgba(255,255,255,0)); z-index:3; pointer-events:none; }
-        .drum-col::after  { content:''; position:absolute; bottom:0; left:0; right:0; height:88px; background:linear-gradient(to top,rgba(255,255,255,1) 20%,rgba(255,255,255,0)); z-index:3; pointer-events:none; }
-        .drum-inner { position:absolute; width:100%; will-change:transform; }
-        /* font-sizeを固定してレイアウトずれを防止、色だけで選択状態を表現 */
+        /* picker-body: 高さ固定 = ITEM_H * (PAD*2+1) = 44*5 = 220px */
+        .picker-body { display: flex; align-items: flex-start; justify-content: center; gap: 2px; padding: 0 16px; height: 220px; position: relative; box-sizing: border-box; }
+        /* center-band: top=88px（=PAD*ITEM_H）固定 */
+        .picker-center-band { position: absolute; left: 16px; right: 16px; top: 88px; height: 44px; background: rgba(255,105,32,0.07); border-top: 1.5px solid rgba(255,105,32,0.25); border-bottom: 1.5px solid rgba(255,105,32,0.25); border-radius: 10px; pointer-events: none; z-index: 2; }
+        .drum-col { flex: 1; height: 220px; overflow: hidden; position: relative; flex-shrink: 0; }
+        .drum-col::before { content:''; position:absolute; top:0; left:0; right:0; height:88px; background:linear-gradient(to bottom,#fff 40%,transparent); z-index:3; pointer-events:none; }
+        .drum-col::after  { content:''; position:absolute; bottom:0; left:0; right:0; height:88px; background:linear-gradient(to top,#fff 40%,transparent); z-index:3; pointer-events:none; }
+        /* drum-inner: top=0 から開始、transform で動かす */
+        .drum-inner { position:absolute; top:0; left:0; width:100%; will-change:transform; }
         .drum-item { height:44px; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; color:#ddd; user-select:none; position:relative; z-index:4; transition: color 0.1s; }
         .drum-item.active { color:#1A1A1A; }
-        .picker-sep { font-size:26px; font-weight:bold; color:#999; flex-shrink:0; padding:0 2px; }
+        .picker-sep { font-size:26px; font-weight:bold; color:#999; flex-shrink:0; padding:0 2px; align-self:center; }
         /* チップUI */
         .score-chip { display:flex; align-items:center; gap:5px; background:#FFF6F2; border:1px solid #FFDCC9; border-radius:10px; padding:5px 12px; cursor:pointer; min-width:72px; }
         .score-chip:active { background:#FFE8D9; }
@@ -401,6 +403,14 @@ async function startAnalysis() {
     animateLoadSteps();
 
     try {
+        // 解析中にスリープさせない（Load failed対策）
+        let wakeLock = null;
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+            }
+        } catch(e) { /* WakeLock非対応でも続行 */ }
+
         const res = await fetchWithTimeout(GAS_ENDPOINT, {
             method: 'POST',
             body: JSON.stringify({
@@ -412,7 +422,15 @@ async function startAnalysis() {
             })
         }, 180000); // 3分
 
-        const data = await res.json();
+        // GASのレスポンスをテキストで受け取ってからパース
+        // （LIFFでres.json()が失敗するケースへの対策）
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch(e) {
+            throw new Error("レスポンスの解析に失敗しました: " + text.substring(0, 100));
+        }
         if (data.status === "error") throw new Error(data.message);
 
         aiResult = data;
@@ -420,16 +438,16 @@ async function startAnalysis() {
         updateStepper(4);
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-confirm').style.display = 'block';
+        if (wakeLock) wakeLock.release();
 
     } catch(e) {
-        // デバッグ用：生のエラー情報をすべて表示
-        const debugInfo = [
-            "エラー種別: " + e.name,
-            "メッセージ: " + e.message,
-            "画像枚数: " + uploadedFiles.length,
-            "モード: " + selectedMode
-        ].join("\n");
-        alert("【デバッグ情報】\n" + debugInfo);
+        if (wakeLock) try { wakeLock.release(); } catch(_) {}
+        const msg = e.name === 'AbortError'
+            ? "タイムアウトしました（3分超過）。\nWi-Fiに接続して再度お試しください。"
+            : e.message === 'Load failed' || e.message === 'Failed to fetch'
+            ? "通信エラーが発生しました。\n画面を暗くせず、そのままお待ちください。\n（再度お試しください）"
+            : "解析エラー: " + e.message;
+        alert(msg);
         location.reload();
     }
 }
@@ -628,18 +646,7 @@ function openPickerFromRow(wrapEl, type) {
     document.body.style.position = 'fixed';
     document.body.style.width = '100%';
 
-    // center-bandをdrum-colの実際の中央に合わせる（描画後に計算）
-    requestAnimationFrame(() => {
-        const pickerBody = document.getElementById('picker-body');
-        const firstDrum = pickerBody.querySelector('.drum-col');
-        if (firstDrum && pickerBody) {
-            const bodyRect = pickerBody.getBoundingClientRect();
-            const drumRect = firstDrum.getBoundingClientRect();
-            const centerY = drumRect.top + drumRect.height / 2 - bodyRect.top;
-            const band = pickerBody.querySelector('.picker-center-band');
-            if (band) band.style.top = (centerY - 22) + 'px';
-        }
-    });
+    // center-bandはCSS固定(top:88px)のため動的計算不要
 }
 
 function addDrumCol(parent) {
@@ -665,7 +672,10 @@ function makeDrum(el, values, initVal) {
         const min = -(values.length - 1) * ITEM_H;
         offset = Math.max(min, Math.min(0, o));
         inner.style.transition = animate ? 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)' : 'none';
-        inner.style.transform = `translateY(${offset + PAD * ITEM_H}px)`;
+        // translateY = PAD*ITEM_H + offset
+        // offset=0のとき: innerのtop=PAD*44=88px → 0番目アイテムがcenter-band(top:88px)に重なる ✓
+        inner.style.transform = `translateY(${PAD * ITEM_H + offset}px)`;
+        // activeアイテム = PAD + round(-offset/ITEM_H)
         const ci = Math.max(0, Math.min(values.length - 1, Math.round(-offset / ITEM_H)));
         inner.querySelectorAll('.drum-item').forEach((item, i) =>
             item.classList.toggle('active', i === ci + PAD)
@@ -763,6 +773,8 @@ async function finalSubmit() {
     try {
         await fetch(GAS_ENDPOINT, {
             method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
                 student_id: userId, mode: selectedMode,
                 exam_name: aiResult.exam_name, exam_date: aiResult.exam_date,
