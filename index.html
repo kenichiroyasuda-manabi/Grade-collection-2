@@ -35,13 +35,6 @@
         .photo-guide-item { font-size: 12px; color: #664400; line-height: 1.8; padding-left: 4px; }
         .photo-guide-item::before { content: "✓ "; color: var(--orange); font-weight: bold; }
 
-        /* ★ 改善: 模試種別選択（撮影前） */
-        .exam-type-selector { margin-bottom: 14px; }
-        .exam-type-selector label { font-size: 13px; color: #555; font-weight: bold; display: block; margin-bottom: 8px; }
-        .exam-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .exam-type-btn { padding: 10px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; font-size: 13px; cursor: pointer; color: #555; transition: 0.2s; text-align: center; }
-        .exam-type-btn.selected { border-color: var(--orange); background: #FFF3EC; color: var(--orange); font-weight: bold; }
-
         .preview-container { position: relative; display: inline-block; margin-right: 10px; margin-bottom: 10px; }
         .preview-container img { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
         .preview-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.55); color: #fff; font-size: 9px; text-align: center; border-radius: 0 0 8px 8px; padding: 2px 0; }
@@ -168,23 +161,12 @@
     <div class="card">
         <h3 id="mode-title" style="margin-bottom:12px; color:var(--orange); font-size:18px;"></h3>
 
-        <!-- ★ 改善: 模試種別選択 -->
-        <div id="exam-type-area" class="exam-type-selector" style="display:none;">
-            <label>模試の種類を選んでください</label>
-            <div class="exam-type-grid">
-                <button class="exam-type-btn" onclick="selectExamType(this, '河合塾（全統）')">河合塾<br><small>全統模試</small></button>
-                <button class="exam-type-btn" onclick="selectExamType(this, '進研模試')">進研模試<br><small>ベネッセ</small></button>
-                <button class="exam-type-btn" onclick="selectExamType(this, '駿台模試')">駿台模試</button>
-                <button class="exam-type-btn" onclick="selectExamType(this, 'その他')">その他・<br>不明</button>
-            </div>
-        </div>
-
-        <!-- ★ 改善: 撮影ガイド -->
+        <!-- 撮影ガイド -->
         <div class="photo-guide">
-            <div class="photo-guide-title">📸 きれいに撮るコツ</div>
-            <div class="photo-guide-item">成績表全体が画面に収まるよう撮影</div>
+            <div class="photo-guide-title">📸 撮影のコツ（精度UP！）</div>
+            <div class="photo-guide-item" style="font-weight:bold; color:#CC4400;">得点・偏差値の数値部分をズームアップして撮影する</div>
             <div class="photo-guide-item">影が入らないよう、正面から真っ直ぐ撮影</div>
-            <div class="photo-guide-item">数値が読めるよう、手ぶれに注意</div>
+            <div class="photo-guide-item">手ぶれに注意。数字がはっきり見えるか確認</div>
             <div id="guide-judgment" class="photo-guide-item" style="display:none;">志望校判定ページも別途撮影して追加</div>
         </div>
 
@@ -292,18 +274,10 @@ function selectMode(mode) {
     document.getElementById('phase-upload').style.display = 'block';
     document.getElementById('mode-title').innerText = mode + "を撮影";
 
-    // 模試の場合のみ種別選択と判定ページガイドを表示
+    // 模試の場合は志望校判定ガイドを表示
     if (mode === '模試') {
-        document.getElementById('exam-type-area').style.display = 'block';
         document.getElementById('guide-judgment').style.display = 'block';
     }
-}
-
-// ★ 改善: 模試種別選択
-function selectExamType(btn, type) {
-    document.querySelectorAll('.exam-type-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    selectedExamType = type;
 }
 
 function removeImage(index) {
