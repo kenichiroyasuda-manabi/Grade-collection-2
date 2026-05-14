@@ -93,6 +93,15 @@
         .score-card.low-confidence { border: 1.5px solid #FFD9B3; }
         .confidence-badge { font-size: 10px; background: #FFF0E0; color: #CC6600; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
 
+        /* 模試名入力 */
+        .exam-name-input-wrap { margin-bottom: 14px; }
+        .exam-name-input-wrap label { font-size: 13px; font-weight: bold; color: #555; display: block; margin-bottom: 6px; }
+        .exam-name-input { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; font-size: 15px; outline: none; background: #fff; transition: border-color 0.2s; }
+        .exam-name-input:focus { border-color: var(--orange); }
+        .exam-name-suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .exam-name-tag { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); background: #fff; color: #555; cursor: pointer; transition: 0.15s; }
+        .exam-name-tag:active { background: #FFF3EC; border-color: var(--orange); color: var(--orange); }
+
         /* 科目自由入力 */
         .subject-wrap { display: flex; flex-direction: column; flex: 1; gap: 4px; }
         .input-subject-custom { border: none; border-bottom: 1.5px solid var(--orange); outline: none; font-size: 15px; font-weight: bold; color: #1A1A1A; padding: 2px 0; background: none; width: 100%; display: none; }
@@ -160,6 +169,19 @@
 <div id="phase-upload" style="display:none;">
     <div class="card">
         <h3 id="mode-title" style="margin-bottom:12px; color:var(--orange); font-size:18px;"></h3>
+
+        <!-- 模試名入力 -->
+        <div class="exam-name-input-wrap">
+            <label>模試名・テスト名</label>
+            <input type="text" id="manual-exam-name" class="exam-name-input" placeholder="例：2024年度 第2回 全統共通テスト模試">
+            <div class="exam-name-suggestions">
+                <span class="exam-name-tag" onclick="setExamName(this)">全統共通テスト模試</span>
+                <span class="exam-name-tag" onclick="setExamName(this)">全統記述模試</span>
+                <span class="exam-name-tag" onclick="setExamName(this)">進研模試</span>
+                <span class="exam-name-tag" onclick="setExamName(this)">駿台模試</span>
+                <span class="exam-name-tag" onclick="setExamName(this)">共通テスト本番</span>
+            </div>
+        </div>
 
         <!-- 撮影ガイド -->
         <div class="photo-guide">
@@ -407,6 +429,9 @@ async function startAnalysis() {
         }
         if (data.status === "error") throw new Error(data.message);
 
+        // 手入力の模試名があれば優先して使う
+        const manualName = document.getElementById('manual-exam-name').value.trim();
+        if (manualName) data.exam_name = manualName;
         aiResult = data;
         renderConfirm(aiResult);
         updateStepper(4);
@@ -572,6 +597,12 @@ function addBlankRow() { addRow('', '', '', '', '', '', {}); }
 const ITEM_H = 44, PAD = 2;
 let pickerWrap = null, pickerType = null;
 let drumsState = [];
+
+function setExamName(tagEl) {
+    const input = document.getElementById('manual-exam-name');
+    input.value = tagEl.textContent;
+    input.focus();
+}
 
 function toggleCustomSubject(selectEl) {
     const customInput = selectEl.closest('.subject-wrap').querySelector('.input-subject-custom');
