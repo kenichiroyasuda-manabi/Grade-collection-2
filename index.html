@@ -106,6 +106,20 @@
         .input-subject-custom.visible { display: block; }
         .btn-custom-toggle { font-size: 10px; color: var(--orange); background: none; border: none; cursor: pointer; padding: 0; text-align: left; white-space: nowrap; }
 
+        /* 志望校入力 */
+        .school-section { margin-top: 16px; }
+        .school-section-title { font-size: 14px; font-weight: bold; color: #1A1A1A; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .school-row { background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); margin-bottom: 10px; display: grid; grid-template-columns: 32px 1fr; gap: 8px; align-items: start; }
+        .school-row-content { display: flex; flex-direction: column; gap: 8px; }
+        .school-input { width: 100%; border: none; border-bottom: 1px solid #eee; outline: none; font-size: 14px; padding: 4px 0; background: none; color: #1A1A1A; }
+        .school-input::placeholder { color: #ccc; }
+        .school-input-label { font-size: 10px; color: #aaa; margin-bottom: 2px; }
+        .school-row-bottom { display: flex; gap: 10px; align-items: flex-end; }
+        .school-dept-wrap { flex: 1; }
+        .judgment-select { appearance: none; -webkit-appearance: none; border: none; border-bottom: 1px solid #eee; outline: none; font-size: 18px; font-weight: bold; text-align: center; width: 44px; padding: 4px 0; cursor: pointer; background: none; color: #1A1A1A; }
+        .judgment-wrap { display: flex; flex-direction: column; align-items: center; }
+        .btn-school-del { background: var(--green); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-top: 4px; }
+
         /* ドラムロールピッカー */
         .picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; display: flex; align-items: flex-end; transition: opacity 0.2s; }
         .picker-sheet { width: 100%; background: #fff; border-radius: 20px 20px 0 0; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); }
@@ -237,7 +251,16 @@
             </p>
         </div>
 
-        <button class="btn" style="border:1px solid var(--red); color:var(--red); background:none; margin-top:15px; font-size:14px; border-radius: 8px;" onclick="retakePhotos()">🗑 画像を撮り直す</button>
+        <!-- 志望校入力セクション -->
+        <div class="school-section">
+            <div class="school-section-title">
+                <span>🏫 志望校</span>
+            </div>
+            <div id="school-container"></div>
+            <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin-bottom:14px; font-size:14px; border-radius: 8px;" onclick="addSchoolRow()">＋ 志望校を追加する</button>
+        </div>
+
+        <button class="btn" style="border:1px solid var(--red); color:var(--red); background:none; margin-top:4px; font-size:14px; border-radius: 8px;" onclick="retakePhotos()">🗑 画像を撮り直す</button>
         <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:10px 0; font-size:14px; border-radius: 8px;" onclick="addBlankRow()">＋ 科目を追加する</button>
         <button class="btn btn-orange" style="border-radius: 8px; background-color: var(--brown);" onclick="finalSubmit()">この内容で送信する →</button>
     </div>
@@ -267,7 +290,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzQhXBc6yxv4UjzsS9M4JxkXNbigRfyIG4bQ3dVdOshkKZJMWUqE-dQd9sMZK1V3aw/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxXEsy_6mDwt1--U0sbVXEdgDpC3OBltMvWj2Wip3PimsNaBdAApwJT1hbLskQxzodD/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -489,6 +512,9 @@ function renderConfirm(data) {
         addBlankRow();
     }
     calculateTotalScore();
+    // 志望校コンテナを初期化（空行を1つ追加）
+    document.getElementById('school-container').innerHTML = '';
+    addSchoolRow();
 }
 
 function normalizeSubject(raw) {
@@ -605,6 +631,36 @@ function calculateTotalScore() {
 }
 
 function addBlankRow() { addRow('', '', '', '', '', '', {}); }
+
+function addSchoolRow(university='', department='', judgment='') {
+    const container = document.getElementById('school-container');
+    const row = document.createElement('div');
+    row.className = 'school-row school-entry';
+    const judgments = ['-','A','B','C','D','E'];
+    let judHtml = `<select class="judgment-select school-judgment">`;
+    judgments.forEach(j => judHtml += `<option value="${j}" ${j===judgment?'selected':''}>${j}</option>`);
+    judHtml += '</select>';
+    row.innerHTML = `
+        <button class="btn-school-del" onclick="this.parentElement.remove()">×</button>
+        <div class="school-row-content">
+            <div>
+                <div class="school-input-label">志望校</div>
+                <input type="text" class="school-input school-university" placeholder="例：東京大学" value="${university}">
+            </div>
+            <div class="school-row-bottom">
+                <div class="school-dept-wrap">
+                    <div class="school-input-label">学科・学部</div>
+                    <input type="text" class="school-input school-department" placeholder="例：理科一類" value="${department}">
+                </div>
+                <div class="judgment-wrap">
+                    <div class="school-input-label">判定</div>
+                    ${judHtml}
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(row);
+}
 
 // ── ドラムロールピッカー ──────────────────────────────
 const ITEM_H = 44, PAD = 2;
@@ -778,6 +834,21 @@ async function finalSubmit() {
     document.getElementById('phase-confirm').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
     document.getElementById('load-msg').innerText = "結果を保存しています...";
+
+    // 志望校を収集
+    const finalSchools = [];
+    document.querySelectorAll('.school-entry').forEach((row, idx) => {
+        const univ = row.querySelector('.school-university').value.trim();
+        const dept = row.querySelector('.school-department').value.trim();
+        const judg = row.querySelector('.school-judgment').value;
+        if (univ || dept) {
+            finalSchools.push({
+                university: [univ, dept].filter(Boolean).join(' '),
+                judgment: judg !== '-' ? judg : ''
+            });
+        }
+    });
+    aiResult.target_schools = finalSchools;
 
     const finalScores = [];
     document.querySelectorAll('.score-row').forEach(row => {
