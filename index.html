@@ -290,7 +290,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxXEsy_6mDwt1--U0sbVXEdgDpC3OBltMvWj2Wip3PimsNaBdAApwJT1hbLskQxzodD/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzom-ShHc_4xZUXnH6kr5d62vDto4XH2-KYjeKHT5_QcTRpmgO-Itb87f5B3t7v8_Gy/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -425,43 +425,23 @@ async function startAnalysis() {
             }
         } catch(e) { /* WakeLock非対応でも続行 */ }
 
-        // 画像を1枚ずつ送って結果をマージ（複数枚でも重くならない）
-        let data = null;
-        for (let i = 0; i < uploadedFiles.length; i++) {
-            const isFirst = i === 0;
-            document.getElementById('load-msg').innerText = uploadedFiles.length > 1
-                ? `画像 ${i+1}/${uploadedFiles.length} を解析中...`
-                : 'AIが解析しています...';
+        // 1枚目の画像で成績を解析（志望校は入力式のため不要）
+        document.getElementById('load-msg').innerText = 'AIが解析しています...';
+        const res = await fetchWithTimeout(GAS_ENDPOINT, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'analyze',
+                mode: selectedMode,
+                image: uploadedFiles[0],
+                student_id: userId
+            })
+        }, 180000);
 
-            const res = await fetchWithTimeout(GAS_ENDPOINT, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: isFirst ? 'analyze' : 'analyze_supplement',
-                    mode: selectedMode,
-                    image: uploadedFiles[i],   // 1枚ずつ送信
-                    student_id: userId
-                })
-            }, 180000);
-
-            const text = await res.text();
-            let result;
-            try { result = JSON.parse(text); }
-            catch(e) { throw new Error("レスポンスの解析に失敗しました: " + text.substring(0, 100)); }
-            if (result.status === "error") throw new Error(result.message);
-
-            if (isFirst) {
-                data = result; // 1枚目: 成績データ本体
-            } else {
-                // 2枚目以降: 志望校判定をマージ
-                if (result.target_schools && result.target_schools.length > 0) {
-                    data.target_schools = (data.target_schools || []).concat(result.target_schools);
-                }
-                // 成績が取れた場合も追加
-                if (result.scores && result.scores.length > 0) {
-                    data.scores = (data.scores || []).concat(result.scores);
-                }
-            }
-        }
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); }
+        catch(e) { throw new Error("レスポンスの解析に失敗しました: " + text.substring(0, 100)); }
+        if (data.status === "error") throw new Error(data.message);
 
         // 手入力の模試名・実施時期があれば優先して使う
         const manualName = document.getElementById('manual-exam-name').value.trim();
