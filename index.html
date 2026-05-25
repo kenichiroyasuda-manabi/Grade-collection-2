@@ -196,7 +196,6 @@
             <div class="photo-guide-item" style="font-weight:bold; color:#CC4400;">得点・偏差値の数値部分をズームアップして撮影する</div>
             <div class="photo-guide-item">影が入らないよう、正面から真っ直ぐ撮影</div>
             <div class="photo-guide-item">手ぶれに注意。数字がはっきり見えるか確認</div>
-            <div id="guide-judgment" class="photo-guide-item" style="display:none;">志望校判定ページも別途撮影して追加</div>
         </div>
 
         <input type="file" id="files" multiple accept="image/*" style="display:none;" onchange="handleFiles(this.files)">
@@ -225,7 +224,6 @@
             <div class="load-step-item" id="lstep-2"><div class="load-step-dot"></div>表の構造を分析中</div>
             <div class="load-step-item" id="lstep-3"><div class="load-step-dot"></div>数値を精密読み取り中</div>
             <div class="load-step-item" id="lstep-4"><div class="load-step-dot"></div>合計値をクロスチェック中</div>
-            <div class="load-step-item" id="lstep-5"><div class="load-step-dot"></div>志望校判定を抽出中</div>
         </div>
     </div>
 </div>
@@ -236,6 +234,7 @@
         <h3 style="margin-bottom:15px; font-size: 18px;">✅ 内容を確認</h3>
         <div id="score-container"></div>
         <div class="total-score-card">
+            <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:10px 0; font-size:14px; border-radius: 8px;" onclick="addBlankRow()">＋ 科目を追加する</button>
             <span class="label">合計点</span>
             <div class="total-input-wrapper">
                 <input type="number" id="total-score-value" class="input-total-score" value="0" oninput="this.style.width = (this.value.length + 1) + 'ch'">
@@ -245,7 +244,7 @@
         <div class="warning-alert-card">
             <span>⚠️</span>
             <p style="font-size: 11px; color:#A07137; line-height: 1.4;">
-                偏差値がおかしい場合は直接タップして修正できます。平均点はAI取得値をそのまま保存します。
+                偏差値が誤っている場合は直接タップして修正できます。誤っている数値が多い場合は再撮影をお勧めします。
             </p>
         </div>
 
@@ -259,7 +258,6 @@
         </div>
 
         <button class="btn" style="border:1px solid var(--red); color:var(--red); background:none; margin-top:4px; font-size:14px; border-radius: 8px;" onclick="retakePhotos()">🗑 画像を撮り直す</button>
-        <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:10px 0; font-size:14px; border-radius: 8px;" onclick="addBlankRow()">＋ 科目を追加する</button>
         <button class="btn btn-orange" style="border-radius: 8px; background-color: var(--brown);" onclick="finalSubmit()">この内容で送信する →</button>
     </div>
 </div>
@@ -619,8 +617,9 @@ function addSchoolRow(university='', department='', judgment='') {
     judgments.forEach(j => judHtml += `<option value="${j}" ${j===judgment?'selected':''}>${j}</option>`);
     judHtml += '</select>';
     row.innerHTML = `
-        <button class="btn-school-del" onclick="this.parentElement.remove()">×</button>
+        <button class="btn-school-del" onclick="this.parentElement.remove(); updateSchoolLabels();">×</button>
         <div class="school-row-content">
+            <div class="school-rank-label" style="font-size:11px; font-weight:bold; color:var(--orange); margin-bottom:4px;"></div>
             <div>
                 <div class="school-input-label">志望校</div>
                 <input type="text" class="school-input school-university" placeholder="例：東京大学" value="${university}">
@@ -638,6 +637,15 @@ function addSchoolRow(university='', department='', judgment='') {
         </div>
     `;
     container.appendChild(row);
+    updateSchoolLabels();
+}
+
+function updateSchoolLabels() {
+    const ranks = ['第一志望', '第二志望', '第三志望', '第四志望', '第五志望'];
+    document.querySelectorAll('.school-entry').forEach((row, i) => {
+        const label = row.querySelector('.school-rank-label');
+        if (label) label.textContent = ranks[i] || `第${i+1}志望`;
+    });
 }
 
 // ── ドラムロールピッカー ──────────────────────────────
@@ -673,31 +681,10 @@ function openPickerFromRow(wrapEl, type) {
         const cur = parseInt(wrapEl.querySelector('.input-score-num').value) || 0;
         const maxVal = parseInt(wrapEl.querySelector('.input-max-score').value) || 200;
         title.textContent = '得点を選択';
-
-        if (maxVal <= 100) {
-            // 満点100以下: 10の位（0〜maxの十の位）と1の位（0〜9）の2ドラム
-            const maxT = Math.floor(maxVal / 10);
-            const dA = addDrumCol(body);
-            drumsState.push(makeDrum(dA, Array.from({length: maxT+1}, (_,i) => i), Math.floor(cur/10)));
-            body.insertAdjacentHTML('beforeend','<span class="picker-sep"></span>');
-            const dB = addDrumCol(body);
-            drumsState.push(makeDrum(dB, [0,1,2,3,4,5,6,7,8,9], cur % 10));
-            // closePicker用に満点情報を保持
-            body.dataset.maxVal = maxVal;
-            body.dataset.mode = '2drum';
-        } else {
-            // 満点200: 100の位（0〜2）・10の位（0〜9）・1の位（0〜9）の3ドラム
-            const maxH = Math.floor(maxVal / 100);
-            const dA = addDrumCol(body);
-            drumsState.push(makeDrum(dA, Array.from({length: maxH+1}, (_,i) => i), Math.floor(cur/100)));
-            body.insertAdjacentHTML('beforeend','<span class="picker-sep"></span>');
-            const dB = addDrumCol(body);
-            drumsState.push(makeDrum(dB, [0,1,2,3,4,5,6,7,8,9], Math.floor((cur%100)/10)));
-            const dC = addDrumCol(body);
-            drumsState.push(makeDrum(dC, [0,1,2,3,4,5,6,7,8,9], cur % 10));
-            body.dataset.maxVal = maxVal;
-            body.dataset.mode = '3drum';
-        }
+        // 0〜満点の連番を1つのドラムで選ぶ
+        const values = Array.from({length: maxVal + 1}, (_, i) => i);
+        const dA = addDrumCol(body);
+        drumsState.push(makeDrum(dA, values, cur));
     } else {
         const cur = parseFloat(wrapEl.querySelector('.input-deviation-raw').value) || 50.0;
         const intV = Math.min(80, Math.max(20, Math.floor(cur)));
@@ -788,11 +775,7 @@ function closePicker(apply) {
     document.body.style.width = '';
     if (apply && pickerWrap) {
         if (pickerType === 'score') {
-            const maxVal = parseInt(pickerWrap.querySelector('.input-max-score').value) || 200;
-            const raw = drumsState.length === 2
-                ? drumsState[0].getVal() * 10 + drumsState[1].getVal()
-                : drumsState[0].getVal() * 100 + drumsState[1].getVal() * 10 + drumsState[2].getVal();
-            const val = Math.min(maxVal, raw);
+            const val = drumsState[0].getVal();
             pickerWrap.querySelector('.input-score').textContent = val;
             pickerWrap.querySelector('.input-score-num').value = val;
             calculateTotalScore();
