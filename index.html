@@ -127,17 +127,15 @@
         .picker-title { font-size: 15px; font-weight: bold; color: #1A1A1A; }
         .picker-btn-cancel { font-size: 15px; color: #999; background: none; border: none; cursor: pointer; padding: 6px 10px; }
         .picker-btn-done { font-size: 15px; color: var(--orange); font-weight: bold; background: none; border: none; cursor: pointer; padding: 6px 10px; }
-        /* picker-body: 高さ固定 = ITEM_H * (PAD*2+1) = 44*5 = 220px */
+        /* ドラム定数: 1行44px、表示5行(220px)、中央=2行目(top:88px) */
         .picker-body { display: flex; align-items: flex-start; justify-content: center; gap: 2px; padding: 0 16px; height: 220px; position: relative; box-sizing: border-box; }
-        /* center-band: top=88px（=PAD*ITEM_H）固定 */
-        .picker-center-band { position: absolute; left: 16px; right: 16px; top: 88px; height: 44px; background: rgba(255,105,32,0.07); border-top: 1.5px solid rgba(255,105,32,0.25); border-bottom: 1.5px solid rgba(255,105,32,0.25); border-radius: 10px; pointer-events: none; z-index: 2; }
+        .picker-center-band { position: absolute; left: 16px; right: 16px; top: 88px; height: 44px; background: rgba(255,105,32,0.10); border-top: 2px solid rgba(255,105,32,0.35); border-bottom: 2px solid rgba(255,105,32,0.35); border-radius: 10px; pointer-events: none; z-index: 2; }
         .drum-col { flex: 1; height: 220px; overflow: hidden; position: relative; flex-shrink: 0; }
-        .drum-col::before { content:''; position:absolute; top:0; left:0; right:0; height:88px; background:linear-gradient(to bottom,#fff 40%,transparent); z-index:3; pointer-events:none; }
-        .drum-col::after  { content:''; position:absolute; bottom:0; left:0; right:0; height:88px; background:linear-gradient(to top,#fff 40%,transparent); z-index:3; pointer-events:none; }
-        /* drum-inner: top=0 から開始、transform で動かす */
+        .drum-col::before { content:''; position:absolute; top:0; left:0; right:0; height:88px; background:linear-gradient(to bottom,rgba(255,255,255,0.95) 30%,transparent); z-index:3; pointer-events:none; }
+        .drum-col::after  { content:''; position:absolute; bottom:0; left:0; right:0; height:88px; background:linear-gradient(to top,rgba(255,255,255,0.95) 30%,transparent); z-index:3; pointer-events:none; }
         .drum-inner { position:absolute; top:0; left:0; width:100%; will-change:transform; }
-        .drum-item { height:44px; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold; color:#ddd; user-select:none; position:relative; z-index:4; transition: color 0.1s; }
-        .drum-item.active { color:#FF6920; font-weight:900; }
+        .drum-item { height:44px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:600; color:#ccc; user-select:none; position:relative; z-index:4; }
+        .drum-item.active { color:#FF6920; font-weight:900; font-size:26px; }
         .picker-sep { font-size:26px; font-weight:bold; color:#999; flex-shrink:0; padding:0 2px; align-self:center; }
         /* チップUI */
         .score-chip { display:flex; align-items:center; gap:5px; background:#FFF6F2; border:1px solid #FFDCC9; border-radius:10px; padding:5px 12px; cursor:pointer; min-width:72px; }
@@ -290,7 +288,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzom-ShHc_4xZUXnH6kr5d62vDto4XH2-KYjeKHT5_QcTRpmgO-Itb87f5B3t7v8_Gy/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxXEsy_6mDwt1--U0sbVXEdgDpC3OBltMvWj2Wip3PimsNaBdAApwJT1hbLskQxzodD/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -643,7 +641,9 @@ function addSchoolRow(university='', department='', judgment='') {
 }
 
 // ── ドラムロールピッカー ──────────────────────────────
-const ITEM_H = 44, PAD = 2;
+const ITEM_H = 44;
+// 表示5行(220px)、中央行top=88px。idx番目の値を中央に表示するtranslateY = 88 - idx*ITEM_H
+const CENTER_TOP = 88;
 let pickerWrap = null, pickerType = null;
 let drumsState = [];
 
@@ -725,64 +725,59 @@ function addDrumCol(parent) {
 }
 
 function makeDrum(el, values, initVal) {
+    // PADなし。translateY = CENTER_TOP - idx*ITEM_H でidx番目をcenter-band中央に合わせる
     const inner = document.createElement('div');
     inner.className = 'drum-inner';
-    for (let i = 0; i < PAD; i++) inner.insertAdjacentHTML('beforeend','<div class="drum-item"></div>');
-    values.forEach(v => inner.insertAdjacentHTML('beforeend',`<div class="drum-item">${v}</div>`));
-    for (let i = 0; i < PAD; i++) inner.insertAdjacentHTML('beforeend','<div class="drum-item"></div>');
+    values.forEach(v => inner.insertAdjacentHTML('beforeend', `<div class="drum-item">${v}</div>`));
     el.appendChild(inner);
 
-    let idx = values.indexOf(initVal); if (idx < 0) idx = 0;
-    let offset = -idx * ITEM_H;
+    let idx = Math.max(0, values.indexOf(initVal));
+    // offset: idx=0→translateY=CENTER_TOP, idx=n→translateY=CENTER_TOP-n*ITEM_H
+    // offset変数は「CENTER_TOPからの減算量」= idx*ITEM_H
+    let offset = idx * ITEM_H;
+    const maxOffset = (values.length - 1) * ITEM_H;
     let startY = 0, startOffset = 0, lastY = 0, lastT = 0, vel = 0;
 
-    function setOffset(o, animate) {
-        const min = -(values.length - 1) * ITEM_H;
-        offset = Math.max(min, Math.min(0, o));
+    function applyTransform(animate) {
         inner.style.transition = animate ? 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)' : 'none';
-        // translateY = PAD*ITEM_H + offset
-        // offset=0のとき: innerのtop=PAD*44=88px → 0番目アイテムがcenter-band(top:88px)に重なる ✓
-        inner.style.transform = `translateY(${PAD * ITEM_H + offset}px)`;
-        // activeアイテム = PAD + round(-offset/ITEM_H)
-        const ci = Math.max(0, Math.min(values.length - 1, Math.round(-offset / ITEM_H)));
+        // translateY = CENTER_TOP - offset → offset=0のとき先頭がcenter-bandに来る
+        inner.style.transform = `translateY(${CENTER_TOP - offset}px)`;
+        const ci = Math.round(offset / ITEM_H);
         inner.querySelectorAll('.drum-item').forEach((item, i) =>
-            item.classList.toggle('active', i === ci + PAD)
+            item.classList.toggle('active', i === ci)
         );
     }
-    setOffset(offset, false);
+    applyTransform(false);
 
-    // イベントは1セットのみ登録
     el.addEventListener('touchstart', e => {
         startY = e.touches[0].clientY;
         startOffset = offset;
-        lastY = startY;
-        lastT = Date.now();
-        vel = 0;
+        lastY = startY; lastT = Date.now(); vel = 0;
         inner.style.transition = 'none';
     }, { passive: true });
 
     el.addEventListener('touchmove', e => {
         e.stopPropagation();
         const y = e.touches[0].clientY;
-        const now = Date.now();
-        const dt = now - lastT;
+        const now = Date.now(), dt = now - lastT;
         vel = dt > 0 ? (y - lastY) / dt : 0;
-        lastY = y;
-        lastT = now;
-        // startOffsetからのdeltaで計算（累積ズレなし）
-        setOffset(startOffset + (y - startY), false);
+        lastY = y; lastT = now;
+        // 上にスクロール(y<startY)→offset増加→大きい値へ
+        offset = Math.max(0, Math.min(maxOffset, startOffset - (y - startY)));
+        applyTransform(false);
     }, { passive: true });
 
     el.addEventListener('touchend', () => {
-        const momentum = vel * 80; // 慣性
+        // 慣性: 上スクロールはvel<0なのでoffset増加方向
+        const momentum = -vel * 80;
         const target = offset + momentum;
-        const min = -(values.length - 1) * ITEM_H;
-        const snapped = Math.max(min, Math.min(0, -Math.round(-target / ITEM_H) * ITEM_H));
-        setOffset(snapped, true);
+        const snapped = Math.round(Math.max(0, Math.min(maxOffset, target)) / ITEM_H) * ITEM_H;
+        offset = snapped;
+        applyTransform(true);
     });
 
     return {
-        getVal: () => values[Math.max(0, Math.min(values.length - 1, Math.round(-offset / ITEM_H)))]
+        getVal: () => values[Math.round(offset / ITEM_H)]
     };
 }
 
