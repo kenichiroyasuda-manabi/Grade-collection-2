@@ -202,7 +202,6 @@
             <div class="photo-guide-item" style="font-weight:bold; color:#CC4400;">得点・偏差値の数値部分をズームアップして撮影する</div>
             <div class="photo-guide-item">影が入らないよう、正面から真っ直ぐ撮影</div>
             <div class="photo-guide-item">手ぶれに注意。数字がはっきり見えるか確認</div>
-            <div id="guide-judgment" class="photo-guide-item" style="display:none;">志望校判定ページも別途撮影して追加</div>
         </div>
 
         <input type="file" id="files" multiple accept="image/*" style="display:none;" onchange="handleFiles(this.files)">
@@ -231,7 +230,7 @@
             <div class="load-step-item" id="lstep-2"><div class="load-step-dot"></div>表の構造を分析中</div>
             <div class="load-step-item" id="lstep-3"><div class="load-step-dot"></div>数値を精密読み取り中</div>
             <div class="load-step-item" id="lstep-4"><div class="load-step-dot"></div>合計値をクロスチェック中</div>
-            <div class="load-step-item" id="lstep-5"><div class="load-step-dot"></div>志望校判定を抽出中</div>
+            <div class="load-step-item" id="lstep-5"><div class="load-step-dot"></div>データを整形中</div>
         </div>
     </div>
 </div>
@@ -251,7 +250,7 @@
         <div class="warning-alert-card">
             <span>⚠️</span>
             <p style="font-size: 11px; color:#A07137; line-height: 1.4;">
-                得点、偏差値に誤差がある場合は手動で修正してください。
+                偏差値がおかしい場合は直接タップして修正できます。平均点はAI取得値をそのまま保存します。
             </p>
         </div>
         <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:10px 0; font-size:14px; border-radius: 8px;" onclick="addBlankRow()">＋ 科目を追加する</button>
@@ -266,7 +265,7 @@
         </div>
 
         <button class="btn" style="border:1px solid var(--red); color:var(--red); background:none; margin-top:4px; font-size:14px; border-radius: 8px;" onclick="retakePhotos()">🗑 画像を撮り直す</button>
-                <button class="btn btn-orange" style="border-radius: 8px;margin-top:4px; background-color: var(--brown);" onclick="finalSubmit()">この内容で送信する →</button>
+        <button class="btn btn-orange" style="border-radius: 8px; margin-top:10px; background-color: var(--brown);" onclick="finalSubmit()">この内容で送信する →</button>
     </div>
 </div>
 
@@ -294,10 +293,10 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzQQidr_2AO5Wfks8r3oHLvwmQRPA0Ol619WZ49q5RSIuy6f9McIfYnrLfC7A0ewvi_/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzom-ShHc_4xZUXnH6kr5d62vDto4XH2-KYjeKHT5_QcTRpmgO-Itb87f5B3t7v8_Gy/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
-let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
+let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "";
 
 async function init() {
     try {
@@ -318,10 +317,7 @@ function selectMode(mode) {
     document.getElementById('phase-upload').style.display = 'block';
     document.getElementById('mode-title').innerText = mode + "を撮影";
 
-    // 模試の場合は志望校判定ガイドを表示
-    if (mode === '模試') {
-        document.getElementById('guide-judgment').style.display = 'block';
-    }
+
 }
 
 function removeImage(index) {
@@ -426,9 +422,10 @@ async function startAnalysis() {
     document.getElementById('phase-loading').style.display = 'block';
     animateLoadSteps();
 
+    // wakeLockをtryの外で宣言（catchからもアクセスできるように）
+    let wakeLock = null;
     try {
         // 解析中にスリープさせない（Load failed対策）
-        let wakeLock = null;
         try {
             if ('wakeLock' in navigator) {
                 wakeLock = await navigator.wakeLock.request('screen');
