@@ -180,6 +180,12 @@
     <div class="card">
         <h3 id="mode-title" style="margin-bottom:12px; color:var(--orange); font-size:18px;"></h3>
 
+        <!-- 生徒ID入力 -->
+        <div class="exam-name-input-wrap">
+            <label>生徒ID <span style="color:var(--red);">*</span></label>
+            <input type="text" id="manual-student-id" class="exam-name-input" placeholder="生徒IDを入力してください" inputmode="text">
+        </div>
+
         <!-- 模試名・実施時期入力 -->
         <div class="exam-name-input-wrap">
             <label>模試名・テスト名</label>
@@ -196,6 +202,7 @@
             <div class="photo-guide-item" style="font-weight:bold; color:#CC4400;">得点・偏差値の数値部分をズームアップして撮影する</div>
             <div class="photo-guide-item">影が入らないよう、正面から真っ直ぐ撮影</div>
             <div class="photo-guide-item">手ぶれに注意。数字がはっきり見えるか確認</div>
+            <div id="guide-judgment" class="photo-guide-item" style="display:none;">志望校判定ページも別途撮影して追加</div>
         </div>
 
         <input type="file" id="files" multiple accept="image/*" style="display:none;" onchange="handleFiles(this.files)">
@@ -224,6 +231,7 @@
             <div class="load-step-item" id="lstep-2"><div class="load-step-dot"></div>表の構造を分析中</div>
             <div class="load-step-item" id="lstep-3"><div class="load-step-dot"></div>数値を精密読み取り中</div>
             <div class="load-step-item" id="lstep-4"><div class="load-step-dot"></div>合計値をクロスチェック中</div>
+            <div class="load-step-item" id="lstep-5"><div class="load-step-dot"></div>志望校判定を抽出中</div>
         </div>
     </div>
 </div>
@@ -233,7 +241,6 @@
     <div class="card" style="background: none; box-shadow: none; padding: 0;">
         <h3 style="margin-bottom:15px; font-size: 18px;">✅ 内容を確認</h3>
         <div id="score-container"></div>
-        <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:10px 0; font-size:14px; border-radius: 8px;" onclick="addBlankRow()">＋ 科目を追加する</button>
         <div class="total-score-card">
             <span class="label">合計点</span>
             <div class="total-input-wrapper">
@@ -244,7 +251,7 @@
         <div class="warning-alert-card">
             <span>⚠️</span>
             <p style="font-size: 11px; color:#A07137; line-height: 1.4;">
-                偏差値が誤っている場合は直接タップして修正できます。<br>誤っている数値が多い場合は再撮影をお勧めします。
+                偏差値がおかしい場合は直接タップして修正できます。平均点はAI取得値をそのまま保存します。
             </p>
         </div>
 
@@ -257,8 +264,9 @@
             <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin-bottom:14px; font-size:14px; border-radius: 8px;" onclick="addSchoolRow()">＋ 志望校を追加する</button>
         </div>
 
-        <button class="btn" style="border:1px solid var(--red); color:var(--red); background:none; margin-top:4px; margin-bottom:14px; font-size:14px; border-radius: 8px;" onclick="retakePhotos()">🗑 画像を撮り直す</button>
-        <button class="btn btn-orange" style="border-radius: 8px; background-color: var(--brown);margin-top:4px;" onclick="finalSubmit()">この内容で送信する →</button>
+        <button class="btn" style="border:1px solid var(--red); color:var(--red); background:none; margin-top:4px; font-size:14px; border-radius: 8px;" onclick="retakePhotos()">🗑 画像を撮り直す</button>
+        <button class="btn" style="border:1px solid var(--orange); color:var(--orange); background:none; margin:10px 0; font-size:14px; border-radius: 8px;" onclick="addBlankRow()">＋ 科目を追加する</button>
+        <button class="btn btn-orange" style="border-radius: 8px; background-color: var(--brown);" onclick="finalSubmit()">この内容で送信する →</button>
     </div>
 </div>
 
@@ -286,7 +294,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxigGObq7QhqR7AvgLayc8Fi1S0Lb6TFNHFb1w0ukHnTLbpEj7-4LeZb_J_dRFpca_P/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzom-ShHc_4xZUXnH6kr5d62vDto4XH2-KYjeKHT5_QcTRpmgO-Itb87f5B3t7v8_Gy/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -407,6 +415,12 @@ function animateLoadSteps() {
 }
 
 async function startAnalysis() {
+    const manualStudentId = document.getElementById('manual-student-id').value.trim();
+    if (!manualStudentId) {
+        alert('生徒IDを入力してください。');
+        return;
+    }
+
     updateStepper(3);
     document.getElementById('phase-upload').style.display = 'none';
     document.getElementById('phase-loading').style.display = 'block';
@@ -429,7 +443,7 @@ async function startAnalysis() {
                 action: 'analyze',
                 mode: selectedMode,
                 image: uploadedFiles[0],
-                student_id: userId
+                student_id: document.getElementById('manual-student-id').value.trim() || userId
             })
         }, 180000);
 
@@ -439,11 +453,13 @@ async function startAnalysis() {
         catch(e) { throw new Error("レスポンスの解析に失敗しました: " + text.substring(0, 100)); }
         if (data.status === "error") throw new Error(data.message);
 
-        // 手入力の模試名・実施時期があれば優先して使う
+        // 手入力の生徒ID・模試名・実施時期を反映
         const manualName = document.getElementById('manual-exam-name').value.trim();
         const manualDate = document.getElementById('manual-exam-date').value.trim();
         if (manualName) data.exam_name = manualName;
         if (manualDate) data.exam_date = manualDate;
+        // 生徒IDを上書き（LINEのuserIdより優先）
+        userId = document.getElementById('manual-student-id').value.trim();
         aiResult = data;
         renderConfirm(aiResult);
         updateStepper(4);
