@@ -251,7 +251,7 @@
         <div class="warning-alert-card">
             <span>⚠️</span>
             <p style="font-size: 11px; color:#A07137; line-height: 1.4;">
-                偏差値がおかしい場合は直接タップして修正できます。平均点はAI取得値をそのまま保存します。
+                得点、偏差値に誤差がある場合は手動で修正してください。
             </p>
         </div>
 
@@ -294,7 +294,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzom-ShHc_4xZUXnH6kr5d62vDto4XH2-KYjeKHT5_QcTRpmgO-Itb87f5B3t7v8_Gy/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzQQidr_2AO5Wfks8r3oHLvwmQRPA0Ol619WZ49q5RSIuy6f9McIfYnrLfC7A0ewvi_/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "", selectedExamType = "";
@@ -443,7 +443,7 @@ async function startAnalysis() {
                 action: 'analyze',
                 mode: selectedMode,
                 image: uploadedFiles[0],
-                student_id: document.getElementById('manual-student-id').value.trim() || userId
+                student_id: userId
             })
         }, 180000);
 
@@ -458,8 +458,7 @@ async function startAnalysis() {
         const manualDate = document.getElementById('manual-exam-date').value.trim();
         if (manualName) data.exam_name = manualName;
         if (manualDate) data.exam_date = manualDate;
-        // 生徒IDを上書き（LINEのuserIdより優先）
-        userId = document.getElementById('manual-student-id').value.trim();
+
         aiResult = data;
         renderConfirm(aiResult);
         updateStepper(4);
@@ -855,6 +854,7 @@ async function finalSubmit() {
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
                 student_id: userId, mode: selectedMode,
+                student_code: document.getElementById('manual-student-id').value.trim(),
                 exam_name: aiResult.exam_name, exam_date: aiResult.exam_date,
                 scores: finalScores, total_score_manual: parseInt(manualTotal) || 0,
                 target_schools: aiResult.target_schools, image_urls: aiResult.imageUrls
