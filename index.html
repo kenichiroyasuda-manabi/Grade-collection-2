@@ -130,7 +130,7 @@
         /* ドラム定数: 1行44px、表示5行(220px)、中央=2行目(top:88px) */
         .picker-body { display: flex; align-items: flex-start; justify-content: center; gap: 2px; padding: 0 16px; height: 220px; position: relative; box-sizing: border-box; }
         .picker-center-band { position: absolute; left: 16px; right: 16px; top: 88px; height: 44px; background: rgba(255,105,32,0.10); border-top: 2px solid rgba(255,105,32,0.35); border-bottom: 2px solid rgba(255,105,32,0.35); border-radius: 10px; pointer-events: none; z-index: 2; }
-        .drum-col { flex: 1; height: 220px; overflow: hidden; position: relative; flex-shrink: 0; }
+        .drum-col { flex: 1; height: 220px; overflow: hidden; position: relative; flex-shrink: 0; touch-action: none; cursor: grab; }
         .drum-col::before { content:''; position:absolute; top:0; left:0; right:0; height:88px; background:linear-gradient(to bottom,rgba(255,255,255,0.95) 30%,transparent); z-index:3; pointer-events:none; }
         .drum-col::after  { content:''; position:absolute; bottom:0; left:0; right:0; height:88px; background:linear-gradient(to top,rgba(255,255,255,0.95) 30%,transparent); z-index:3; pointer-events:none; }
         .drum-inner { position:absolute; top:0; left:0; width:100%; will-change:transform; }
@@ -293,7 +293,7 @@
 </div>
 
 <script>
-const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzQQidr_2AO5Wfks8r3oHLvwmQRPA0Ol619WZ49q5RSIuy6f9McIfYnrLfC7A0ewvi_/exec';
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxS-bmXDBc96KnK2TS-17Dga3dBNKCLCWIy-uh_rQ0n4D_z7irIreQPyCvUgwnh2jt7/exec';
 const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "";
@@ -309,6 +309,11 @@ async function init() {
     }
 }
 init();
+
+// ★ 修正: AI出力などをHTMLに埋め込む際のエスケープ（引用符入り科目名でDOMが壊れるのを防止）
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 function selectMode(mode) {
     selectedMode = mode;
@@ -345,7 +350,7 @@ function renderPreviews() {
     const hint = document.getElementById('image-count-hint');
     if (uploadedFiles.length > 0) {
         hint.style.display = 'block';
-        hint.textContent = `${uploadedFiles.length}枚選択中` + (uploadedFiles.length === 1 && selectedMode === '模試' ? '（志望校判定ページもあれば追加してください）' : '');
+        hint.textContent = `${uploadedFiles.length}枚選択中` + (uploadedFiles.length === 1 && selectedMode === '模試' ? '（成績が複数ページある場合は追加してください）' : '');
     } else {
         hint.style.display = 'none';
     }
@@ -368,7 +373,7 @@ async function handleFiles(files) {
     renderPreviews();
 }
 
-// ★ 改善: 解像度を2400pxに引き上げ（小さな数字の誤認識を削減）
+// 長辺1800pxに縮小（GASのpayloadサイズ・Load failed対策とOCR精度のバランス）
 function resizeImage(file) {
     return new Promise(res => {
         const reader = new FileReader();
@@ -377,7 +382,7 @@ function resizeImage(file) {
             img.onload = () => {
                 const canvas = document.createElement('canvas');
                 let w = img.width, h = img.height;
-                const max = 1800; // Load failed対策: サイズを抑える
+                const max = 1800;
                 if (w > h && w > max) { h *= max / w; w = max; }
                 else if (h > max) { w *= max / h; h = max; }
                 canvas.width = w; canvas.height = h;
@@ -432,14 +437,14 @@ async function startAnalysis() {
             }
         } catch(e) { /* WakeLock非対応でも続行 */ }
 
-        // 1枚目の画像で成績を解析（志望校は入力式のため不要）
+        // ★ 修正: 選択した「すべての画像」を解析に送る（従来は1枚目のみ送信されていた）
         document.getElementById('load-msg').innerText = 'AIが解析しています...';
         const res = await fetchWithTimeout(GAS_ENDPOINT, {
             method: 'POST',
             body: JSON.stringify({
                 action: 'analyze',
                 mode: selectedMode,
-                image: uploadedFiles[0],
+                images: uploadedFiles,
                 student_id: userId
             })
         }, 180000);
@@ -548,7 +553,7 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
 
     // normalizedSubjectがなくAIが読み取った科目名がある場合はカスタム入力として扱う
     const isCustom = !normalizedSubject && !!subject;
-    const customVal = isCustom ? subject : '';
+    const customVal = isCustom ? escapeHtml(subject) : '';
 
     let subjectHtml = `<div class="subject-wrap">`;
     subjectHtml += `<select class="input-subject-rich input-subject" onchange="toggleCustomSubject(this)">`;
@@ -559,7 +564,7 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
     subjectHtml += `<option value="__custom__" ${isCustom ? 'selected' : ''}>✏️ 自由入力...</option>`;
     subjectHtml += `</select>`;
     subjectHtml += `<input type="text" class="input-subject-custom${isCustom ? ' visible' : ''}" placeholder="科目名を入力" value="${customVal}">`;
-    if (isUnknownSubject) subjectHtml += `<span class="confidence-badge">要確認:${subject}</span>`;
+    if (isUnknownSubject) subjectHtml += `<span class="confidence-badge">要確認:${escapeHtml(subject)}</span>`;
     subjectHtml += `</div>`;
 
     let levelHtml = `<select class="level-badge input-level" onchange="updateLevelClass(this)">`;
@@ -634,12 +639,12 @@ function addSchoolRow(university='', department='', judgment='') {
             <div class="school-rank-label" style="font-size:11px; font-weight:bold; color:var(--orange); margin-bottom:4px;"></div>
             <div>
                 <div class="school-input-label">志望校</div>
-                <input type="text" class="school-input school-university" placeholder="例：東京大学" value="${university}">
+                <input type="text" class="school-input school-university" placeholder="例：東京大学" value="${escapeHtml(university)}">
             </div>
             <div class="school-row-bottom">
                 <div class="school-dept-wrap">
                     <div class="school-input-label">学科・学部</div>
-                    <input type="text" class="school-input school-department" placeholder="例：理科一類" value="${department}">
+                    <input type="text" class="school-input school-department" placeholder="例：理科一類" value="${escapeHtml(department)}">
                 </div>
                 <div class="judgment-wrap">
                     <div class="school-input-label">判定</div>
@@ -748,31 +753,48 @@ function makeDrum(el, values, initVal) {
     }
     applyTransform(false);
 
-    el.addEventListener('touchstart', e => {
-        startY = e.touches[0].clientY;
+    // ★ 修正: タッチ/マウス共通のハンドラに整理（PCブラウザでの動作確認も可能に）
+    function dragStart(y) {
+        startY = y;
         startOffset = offset;
-        lastY = startY; lastT = Date.now(); vel = 0;
+        lastY = y; lastT = Date.now(); vel = 0;
         inner.style.transition = 'none';
-    }, { passive: true });
-
-    el.addEventListener('touchmove', e => {
-        e.stopPropagation();
-        const y = e.touches[0].clientY;
+    }
+    function dragMove(y) {
         const now = Date.now(), dt = now - lastT;
         vel = dt > 0 ? (y - lastY) / dt : 0;
         lastY = y; lastT = now;
         // 上にスクロール(y<startY)→offset増加→大きい値へ
         offset = Math.max(0, Math.min(maxOffset, startOffset - (y - startY)));
         applyTransform(false);
-    }, { passive: true });
-
-    el.addEventListener('touchend', () => {
+    }
+    function dragEnd() {
         // 慣性: 上スクロールはvel<0なのでoffset増加方向
         const momentum = -vel * 80;
         const target = offset + momentum;
         const snapped = Math.round(Math.max(0, Math.min(maxOffset, target)) / ITEM_H) * ITEM_H;
         offset = snapped;
         applyTransform(true);
+    }
+
+    el.addEventListener('touchstart', e => dragStart(e.touches[0].clientY), { passive: true });
+    el.addEventListener('touchmove', e => {
+        e.stopPropagation();
+        dragMove(e.touches[0].clientY);
+    }, { passive: true });
+    el.addEventListener('touchend', dragEnd);
+
+    el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        dragStart(e.clientY);
+        const onMove = ev => dragMove(ev.clientY);
+        const onUp = () => {
+            dragEnd();
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+        };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
     });
 
     return {
@@ -845,7 +867,7 @@ async function finalSubmit() {
 
     const manualTotal = document.getElementById('total-score-value').value;
     try {
-        await fetch(GAS_ENDPOINT, {
+        const res = await fetch(GAS_ENDPOINT, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain' },
@@ -857,11 +879,17 @@ async function finalSubmit() {
                 target_schools: aiResult.target_schools, image_urls: aiResult.imageUrls
             })
         });
+        // ★ 修正: サーバーのレスポンスを検証（保存失敗でも🎉が出てしまうのを防止）
+        let data = {};
+        try { data = JSON.parse(await res.text()); } catch(_) {}
+        if (data.status !== 'ok') throw new Error(data.message || 'サーバー側で保存に失敗しました');
+
         document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-success').style.display = 'block';
     } catch(e) {
+        // ★ 修正: エラー時はローディングを閉じて確認画面に戻す（従来は両画面が重なって表示されていた）
         alert("保存エラー: " + e.message);
-        document.getElementById('phase-loading').style.display = 'block';
+        document.getElementById('phase-loading').style.display = 'none';
         document.getElementById('phase-confirm').style.display = 'block';
     }
 }
