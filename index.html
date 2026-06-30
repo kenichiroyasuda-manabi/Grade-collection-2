@@ -580,14 +580,14 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
             <div class="card-header">
                 ${subjectHtml}
                 <div class="score-chip" onclick="openPickerFromRow(this,'score')">
-                    <div>
-                        <div class="score-chip-label">得点</div>
-                        <div class="score-chip-val input-score">${score || '--'}</div>
-                    </div>
-                    <span class="score-chip-max">/${maxScoreVal}</span>
-                    <input type="hidden" class="input-score-raw input-score-num" value="${score || ''}">
-                    <input type="hidden" class="input-max-score" value="${maxScoreVal}">
-                </div>
+    <div>
+        <div class="score-chip-label">得点</div>
+        <div class="score-chip-val input-score">${score || '--'}</div>
+    </div>
+    <span class="score-chip-max" onclick="event.stopPropagation(); openPickerFromRow(this.parentElement,'maxscore')">/<span class="input-max-score-display">${maxScoreVal}</span></span>
+    <input type="hidden" class="input-score-raw input-score-num" value="${score || ''}">
+    <input type="hidden" class="input-max-score" value="${maxScoreVal}">
+</div>
             </div>
             <div class="card-details">
                 <div class="dev-chip" onclick="openPickerFromRow(this,'deviation')">
@@ -698,8 +698,16 @@ function openPickerFromRow(wrapEl, type) {
         const cur = parseInt(wrapEl.querySelector('.input-score-num').value) || 0;
         const maxVal = parseInt(wrapEl.querySelector('.input-max-score').value) || 200;
         title.textContent = '得点を選択';
-        // 0〜満点の連番を1つのドラムで選ぶ
         const values = Array.from({length: maxVal + 1}, (_, i) => i);
+        const dA = addDrumCol(body);
+        drumsState.push(makeDrum(dA, values, cur));
+    } else if (type === 'maxscore') {
+        const cur = parseInt(wrapEl.querySelector('.input-max-score').value) || 100;
+        title.textContent = '満点（配点）を選択';
+        // よくある配点を候補に（10刻み + 主要な満点）
+        const values = [10,20,25,30,40,50,60,70,75,80,90,100,120,150,200,250,300];
+        // 現在値が候補になければ追加してソート
+        if (!values.includes(cur)) { values.push(cur); values.sort((a,b)=>a-b); }
         const dA = addDrumCol(body);
         drumsState.push(makeDrum(dA, values, cur));
     } else {
@@ -813,6 +821,10 @@ function closePicker(apply) {
             pickerWrap.querySelector('.input-score').textContent = val;
             pickerWrap.querySelector('.input-score-num').value = val;
             calculateTotalScore();
+        } else if (pickerType === 'maxscore') {
+            const val = drumsState[0].getVal();
+            pickerWrap.querySelector('.input-max-score').value = val;
+            pickerWrap.querySelector('.input-max-score-display').textContent = val;
         } else {
             const v = (drumsState[0].getVal() + drumsState[1].getVal()/10).toFixed(1);
             pickerWrap.querySelector('.input-deviation').textContent = v;
