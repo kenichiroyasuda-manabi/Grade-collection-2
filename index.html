@@ -701,13 +701,11 @@ function openPickerFromRow(wrapEl, type) {
         const values = Array.from({length: maxVal + 1}, (_, i) => i);
         const dA = addDrumCol(body);
         drumsState.push(makeDrum(dA, values, cur));
-    } else if (type === 'maxscore') {
+   } else if (type === 'maxscore') {
         const cur = parseInt(wrapEl.querySelector('.input-max-score').value) || 100;
         title.textContent = '満点（配点）を選択';
-        // よくある配点を候補に（10刻み + 主要な満点）
-        const values = [10,20,25,30,40,50,60,70,75,80,90,100,120,150,200,250,300];
-        // 現在値が候補になければ追加してソート
-        if (!values.includes(cur)) { values.push(cur); values.sort((a,b)=>a-b); }
+        // 0〜300を1点刻みで選べる
+        const values = Array.from({length: 301}, (_, i) => i);
         const dA = addDrumCol(body);
         drumsState.push(makeDrum(dA, values, cur));
     } else {
