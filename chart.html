@@ -105,6 +105,14 @@ body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-
 .opt.sel .box{background:var(--orange);border-color:var(--orange);}
 .opt .nm{font-size:14.5px;font-weight:700;}
 .opt .tag{font-size:10.5px;color:var(--orange-deep);margin-left:auto;font-weight:700;background:var(--orange-wash);padding:2px 8px;border-radius:6px;}
+.opt-wrap{margin-bottom:8px;}
+.opt-wrap .opt{margin-bottom:0;}
+.merge-detail{border:1.5px solid var(--line-2);border-top:none;border-radius:0 0 12px 12px;padding:10px 12px 12px;margin-top:-8px;padding-top:16px;background:#FBF8F5;}
+.merge-detail-head{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;color:var(--ink-3);letter-spacing:.03em;margin-bottom:8px;}
+.unmerge-all{border:none;background:none;color:var(--drop);font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:2px;padding:0;}
+.member-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line-2);border-radius:16px;padding:5px 6px 5px 11px;margin:0 6px 6px 0;}
+.member-remove{border:none;background:var(--line-2);color:var(--ink-2);width:17px;height:17px;border-radius:50%;font-size:11px;line-height:1;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;padding:0;}
+.member-remove:active{background:var(--drop);color:#fff;}
 .name-box{margin-top:12px;padding:15px;background:var(--orange-wash);border-radius:14px;animation:fade .2s;}
 .name-box label{font-size:12px;font-weight:800;color:var(--orange-deep);display:block;margin-bottom:9px;}
 .name-box input{width:100%;border:1.5px solid var(--orange);border-radius:10px;padding:11px 13px;font-size:15px;font-weight:700;outline:none;font-family:inherit;background:#fff;color:var(--ink);}
@@ -156,7 +164,7 @@ body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-
   <div class="sheet">
     <div class="grip"></div>
     <h3>科目をまとめる</h3>
-    <div class="lead">同じ科目が別々の名前で登録されているときは、選んで1つにまとめられます。まとめた表示はこの画面を開いている間だけ有効です。</div>
+    <div class="lead">同じ科目が別々の名前で登録されているときは、選んで1つにまとめられます。まとめた科目は内訳から個別に戻したり、まとめ全体を解除したりできます。表示はこの画面を開いている間だけ有効です。</div>
     <div id="optList"></div>
     <div class="name-box" id="nameBox" style="display:none;">
       <label>まとめた後の表示名</label>
@@ -257,11 +265,13 @@ const inMode=()=>RAW.filter(r=>r.mode===mode);
 function dSubjects(){const s=[];inMode().forEach(r=>{const d=dName(r.subject);if(!s.includes(d))s.push(d);});return s;}
 function members(dn){const set=new Set();inMode().forEach(r=>{if(dName(r.subject)===dn)set.add(r.subject);});return set;}
 const isMerged=dn=>members(dn).size>1;
+// 「まとめる」は表記揺れの統一（同じ科目として扱う）が目的で、得点を合算するものではない。
+// そのため各レコードの得点・満点・偏差値はそのまま1件ずつ表示し、まとめによって値を加工しない。
 function series(){
-  const recs=inMode().filter(r=>dName(r.subject)===currentSubject);const by={};
-  recs.forEach(r=>{if(!by[r.exam_id])by[r.exam_id]={exam_id:r.exam_id,exam_name:r.exam_name,term:r.term,sort:r.sort,score:0,max:0,devs:[],subs:new Set()};
-    const e=by[r.exam_id];e.score+=r.score;e.max+=r.max;if(r.dev!=null)e.devs.push(r.dev);e.subs.add(r.subject);});
-  return Object.values(by).map(e=>({...e,dev:e.devs.length?Math.round(e.devs.reduce((a,b)=>a+b,0)/e.devs.length*10)/10:null,subLabel:[...e.subs].join('＋')}))
+  return inMode().filter(r=>dName(r.subject)===currentSubject)
+    .map(r=>({exam_id:r.exam_id,exam_name:r.exam_name,term:r.term,sort:r.sort,
+      score:r.score,max:r.max,dev:r.dev!=null?r.dev:null,
+      subLabel:r.subject!==currentSubject?r.subject:null}))
     .sort((a,b)=>a.sort<b.sort?-1:a.sort>b.sort?1:0);
 }
 const effAxis=()=>(mode==='定期テスト'&&axis==='deviation')?'rate':axis;
@@ -326,8 +336,8 @@ function renderHist(){
   const box=document.getElementById('hist');const data=[...series()].reverse();
   if(data.length===0){box.innerHTML='<div class="hrow"><div class="term" style="padding:6px 0;">記録がありません</div></div>';return;}
   let h=`<div class="hrow head"><span>テスト</span><span class="r">得点</span><span class="r">偏差値</span></div>`;
-  data.forEach(r=>{const merged=r.subLabel&&r.subLabel.includes('＋');
-    h+=`<div class="hrow"><div><div class="exam">${r.exam_name}</div>${merged?`<span class="merged-tag">${r.subLabel}</span>`:''}<div class="term">${r.term}</div></div>
+  data.forEach(r=>{
+    h+=`<div class="hrow"><div><div class="exam">${r.exam_name}</div>${r.subLabel?`<span class="merged-tag">元表記：${r.subLabel}</span>`:''}<div class="term">${r.term}</div></div>
       <div class="sc">${r.score}<span class="max">/${r.max}</span></div>
       <div class="dv ${r.dev==null?'none':''}">${r.dev!=null?r.dev:'—'}</div></div>`;});
   box.innerHTML=h;
@@ -343,18 +353,49 @@ function openEdit(){editSel=new Set();renderOpts();document.getElementById('name
 function closeEdit(){document.getElementById('sheet').classList.remove('show');renderAll();}
 function renderOpts(){
   const l=document.getElementById('optList');l.innerHTML='';
-  dSubjects().forEach(s=>{const m=isMerged(s);const it=document.createElement('div');
-    it.className='opt'+(editSel.has(s)?' sel':'');
-    it.innerHTML=`<div class="box">${editSel.has(s)?'✓':''}</div><div class="nm">${s}</div>${m?`<div class="tag">${members(s).size}科目</div>`:''}`;
-    it.onclick=()=>{editSel.has(s)?editSel.delete(s):editSel.add(s);selChange();};l.appendChild(it);});
+  dSubjects().forEach(s=>{
+    const m=isMerged(s);
+    const wrap=document.createElement('div');wrap.className='opt-wrap';
+    const row=document.createElement('div');row.className='opt'+(editSel.has(s)?' sel':'');
+    const box=document.createElement('div');box.className='box';box.textContent=editSel.has(s)?'✓':'';
+    const nm=document.createElement('div');nm.className='nm';nm.textContent=s;
+    row.appendChild(box);row.appendChild(nm);
+    if(m){const tag=document.createElement('div');tag.className='tag';tag.textContent=members(s).size+'科目';row.appendChild(tag);}
+    row.onclick=()=>{editSel.has(s)?editSel.delete(s):editSel.add(s);selChange();};
+    wrap.appendChild(row);
+    if(m){
+      // 誤って統合した場合でも、内訳から個別に戻す／まとめ全体を解除できるようにする
+      const detail=document.createElement('div');detail.className='merge-detail';
+      const head=document.createElement('div');head.className='merge-detail-head';
+      const headLabel=document.createElement('span');headLabel.textContent='内訳';
+      const unmergeAllBtn=document.createElement('button');unmergeAllBtn.className='unmerge-all';unmergeAllBtn.textContent='まとめを解除';
+      unmergeAllBtn.onclick=(e)=>{e.stopPropagation();unmergeGroup(s);};
+      head.appendChild(headLabel);head.appendChild(unmergeAllBtn);
+      detail.appendChild(head);
+      members(s).forEach(o=>{
+        const chip=document.createElement('span');chip.className='member-chip';
+        const label=document.createElement('span');label.textContent=o;
+        chip.appendChild(label);
+        const rm=document.createElement('button');rm.className='member-remove';rm.textContent='×';
+        rm.onclick=(e)=>{e.stopPropagation();unmergeOne(o);};
+        chip.appendChild(rm);
+        detail.appendChild(chip);
+      });
+      wrap.appendChild(detail);
+    }
+    l.appendChild(wrap);
+  });
 }
 function selChange(){renderOpts();const n=editSel.size;const nb=document.getElementById('nameBox');const b=document.getElementById('btnMerge');
   if(n>=2){nb.style.display='block';document.getElementById('mergeName').value=[...editSel][0];b.disabled=false;}
   else{nb.style.display='none';b.disabled=true;}}
 function doMerge(){const nm=(document.getElementById('mergeName').value||'').trim()||[...editSel][0];
-  editSel.forEach(dn=>members(dn).forEach(o=>mergeMap[o]=nm));currentSubject=nm;editSel=new Set();
-  renderOpts();document.getElementById('nameBox').style.display='none';document.getElementById('btnMerge').disabled=true;}
-function resetMerges(){mergeMap={};editSel=new Set();renderOpts();document.getElementById('nameBox').style.display='none';document.getElementById('btnMerge').disabled=true;}
+  editSel.forEach(dn=>members(dn).forEach(o=>mergeMap[o]=nm));currentSubject=nm;
+  resetEditSelUI();}
+function unmergeGroup(dn){members(dn).forEach(o=>delete mergeMap[o]);if(currentSubject===dn)currentSubject=null;resetEditSelUI();}
+function unmergeOne(o){delete mergeMap[o];resetEditSelUI();}
+function resetEditSelUI(){editSel=new Set();renderOpts();document.getElementById('nameBox').style.display='none';document.getElementById('btnMerge').disabled=true;}
+function resetMerges(){mergeMap={};resetEditSelUI();}
 
 // 起動
 boot();

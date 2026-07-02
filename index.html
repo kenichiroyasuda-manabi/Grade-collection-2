@@ -299,6 +299,16 @@ const MY_LIFF_ID = '2009442207-s1e2B6Vn';
 
 let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "";
 
+// 科目プルダウンの選択肢（高校の模試科目 + 小中学校の科目）
+const SUBJECT_OPTIONS = [
+    "英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ",
+    "国語", "国語(現代文)", "国語(古文)", "国語(漢文)",
+    "物理基礎", "化学基礎", "生物基礎", "地学基礎", "物理", "化学", "生物", "地学",
+    "日本史", "世界史", "地理", "公共/倫理", "公共/政治・経済", "情報",
+    "算数", "数学", "理科", "社会", "英語",
+    "音楽", "美術", "図画工作", "保健体育", "体育", "技術・家庭", "家庭"
+];
+
 async function init() {
     try {
         await liff.init({ liffId: MY_LIFF_ID });
@@ -513,13 +523,13 @@ function renderConfirm(data) {
 
 function normalizeSubject(raw) {
     if (!raw) return "";
-    const subjectOptions = ["英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ", "国語", "国語(現代文)", "国語(古文)", "国語(漢文)", "物理基礎", "化学基礎", "生物基礎", "地学基礎", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "公共/倫理", "公共/政治・経済", "情報"];
 
     if (raw.includes("リスニング")) return "英語リスニング";
-    if (raw.includes("英語") || raw.includes("リーディング") || raw.includes("筆記") || raw.match(/^英$/)) return "英語リーディング";
+    if (raw.includes("リーディング") || raw.includes("筆記")) return "英語リーディング";
     if (raw.includes("現代文") || raw.includes("現文")) return "国語(現代文)";
     if (raw.includes("古文")) return "国語(古文)";
     if (raw.includes("漢文")) return "国語(漢文)";
+    if (raw.includes("英語") || raw.match(/^英$/)) return "英語";
 
     const aliases = {
         "数ⅠA": "数学①(Ⅰ,A)", "数学1A": "数学①(Ⅰ,A)", "数IA": "数学①(Ⅰ,A)", "数①": "数学①(Ⅰ,A)",
@@ -529,7 +539,11 @@ function normalizeSubject(raw) {
     };
     if (aliases[raw]) return aliases[raw];
 
-    for (let opt of subjectOptions) {
+    // 完全一致を優先（例: raw="数学" が「数学①(Ⅰ,A)」に部分一致して誤判定されるのを防ぐ）
+    for (let opt of SUBJECT_OPTIONS) {
+        if (raw === opt) return opt;
+    }
+    for (let opt of SUBJECT_OPTIONS) {
         if (raw.includes(opt) || opt.includes(raw)) return opt;
     }
     return "";
@@ -541,7 +555,7 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
     row.className = 'score-card score-row';
 
     const normalizedSubject = normalizeSubject(subject);
-    const subjectOptions = ["英語リーディング", "英語リスニング", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ", "国語", "国語(現代文)", "国語(古文)", "国語(漢文)", "物理基礎", "化学基礎", "生物基礎", "地学基礎", "物理", "化学", "生物", "地学", "日本史", "世界史", "地理", "公共/倫理", "公共/政治・経済", "情報"];
+    const subjectOptions = SUBJECT_OPTIONS;
     const levelOptions = ["-", "S", "A", "B", "C", "D", "E"];
 
     row.dataset.originalScore = score || '';
