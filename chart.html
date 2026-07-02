@@ -41,16 +41,11 @@ body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-
 .axis button{border:none;background:none;padding:8px 16px;border-radius:9px;font-size:13px;font-weight:700;color:var(--ink-2);cursor:pointer;font-family:inherit;transition:.18s;}
 .axis button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(33,26,22,.12);}
 .axis button:disabled{opacity:.35;cursor:default;}
-.edit-btn{margin-left:auto;border:1.5px solid var(--line-2);background:var(--card);border-radius:11px;padding:9px 14px;font-size:13px;font-weight:700;color:var(--ink-2);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:.15s;}
-.edit-btn:active{background:var(--orange-wash);border-color:var(--orange);color:var(--orange-deep);}
-
 /* 科目チップ */
 .subj{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
 .subj::-webkit-scrollbar{display:none;}
 .chip{flex-shrink:0;border:1.5px solid var(--line-2);background:var(--card);padding:9px 16px;border-radius:22px;font-size:13.5px;font-weight:700;color:var(--ink-2);cursor:pointer;transition:.15s;white-space:nowrap;font-family:inherit;display:inline-flex;align-items:center;gap:5px;}
 .chip.on{border-color:var(--orange);background:var(--orange);color:#fff;box-shadow:var(--shadow-lift);}
-.chip .dot{width:5px;height:5px;border-radius:50%;background:var(--orange);}
-.chip.on .dot{background:rgba(255,255,255,.85);}
 
 /* グラフカード */
 .card{background:var(--card);border-radius:20px;padding:20px 18px 14px;box-shadow:var(--shadow);margin-bottom:14px;}
@@ -83,45 +78,11 @@ body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-
 .hrow.head span{font-size:10.5px;color:var(--ink-3);font-weight:800;letter-spacing:.04em;}
 .hrow.head .r{text-align:right;}
 .hrow .exam{font-size:13.5px;font-weight:700;letter-spacing:-.01em;}
-.hrow .merged-tag{font-size:10px;color:var(--orange-deep);background:var(--orange-wash);display:inline-block;padding:1px 7px;border-radius:5px;margin-top:3px;font-weight:700;}
 .hrow .term{font-size:11px;color:var(--ink-3);font-weight:500;margin-top:3px;}
 .hrow .sc{font-size:15px;font-weight:800;text-align:right;letter-spacing:-.01em;}
 .hrow .sc .max{font-size:11px;color:var(--ink-3);font-weight:600;}
 .hrow .dv{font-size:15px;font-weight:800;color:var(--dev);text-align:right;min-width:44px;letter-spacing:-.01em;}
 .hrow .dv.none{color:var(--ink-3);font-weight:600;}
-
-/* 編集シート */
-.sheet-bg{position:fixed;inset:0;background:rgba(33,26,22,.42);z-index:100;display:none;align-items:flex-end;backdrop-filter:blur(2px);}
-.sheet-bg.show{display:flex;animation:fade .18s ease;}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-.sheet{width:100%;max-width:520px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;padding:22px 18px calc(env(safe-area-inset-bottom,0) + 22px);max-height:86vh;overflow-y:auto;animation:slideup .24s cubic-bezier(.2,.8,.3,1);}
-@keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.sheet .grip{width:38px;height:4px;background:var(--line-2);border-radius:3px;margin:0 auto 16px;}
-.sheet h3{font-size:18px;font-weight:800;margin-bottom:6px;}
-.sheet .lead{font-size:12.5px;color:var(--ink-2);margin-bottom:18px;line-height:1.65;}
-.opt{display:flex;align-items:center;gap:13px;padding:13px 12px;border-radius:12px;border:1.5px solid var(--line-2);margin-bottom:8px;cursor:pointer;transition:.15s;}
-.opt.sel{border-color:var(--orange);background:var(--orange-wash);}
-.opt .box{width:23px;height:23px;border-radius:7px;border:2px solid var(--line-2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:900;transition:.15s;}
-.opt.sel .box{background:var(--orange);border-color:var(--orange);}
-.opt .nm{font-size:14.5px;font-weight:700;}
-.opt .tag{font-size:10.5px;color:var(--orange-deep);margin-left:auto;font-weight:700;background:var(--orange-wash);padding:2px 8px;border-radius:6px;}
-.opt-wrap{margin-bottom:8px;}
-.opt-wrap .opt{margin-bottom:0;}
-.merge-detail{border:1.5px solid var(--line-2);border-top:none;border-radius:0 0 12px 12px;padding:10px 12px 12px;margin-top:-8px;padding-top:16px;background:#FBF8F5;}
-.merge-detail-head{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;color:var(--ink-3);letter-spacing:.03em;margin-bottom:8px;}
-.unmerge-all{border:none;background:none;color:var(--drop);font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:2px;padding:0;}
-.member-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line-2);border-radius:16px;padding:5px 6px 5px 11px;margin:0 6px 6px 0;}
-.member-remove{border:none;background:var(--line-2);color:var(--ink-2);width:17px;height:17px;border-radius:50%;font-size:11px;line-height:1;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;padding:0;}
-.member-remove:active{background:var(--drop);color:#fff;}
-.name-box{margin-top:12px;padding:15px;background:var(--orange-wash);border-radius:14px;animation:fade .2s;}
-.name-box label{font-size:12px;font-weight:800;color:var(--orange-deep);display:block;margin-bottom:9px;}
-.name-box input{width:100%;border:1.5px solid var(--orange);border-radius:10px;padding:11px 13px;font-size:15px;font-weight:700;outline:none;font-family:inherit;background:#fff;color:var(--ink);}
-.acts{display:flex;gap:10px;margin-top:18px;}
-.acts button{flex:1;padding:14px;border-radius:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;border:none;transition:.15s;}
-.acts .primary{background:var(--orange);color:#fff;box-shadow:var(--shadow-lift);}
-.acts .primary:disabled{background:var(--line-2);color:var(--ink-3);box-shadow:none;}
-.acts .ghost{background:#F0EAE5;color:var(--ink-2);flex:0 0 auto;padding:14px 20px;}
-.reset{width:100%;margin-top:10px;padding:11px;border:none;background:none;font-size:12px;color:var(--ink-3);font-weight:700;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:2px;}
 </style>
 </head>
 <body>
@@ -141,7 +102,6 @@ body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-
     <button id="ax-dev" class="on" onclick="setAxis('deviation')">偏差値</button>
     <button id="ax-rate" onclick="setAxis('rate')">得点率</button>
   </div>
-  <button class="edit-btn" onclick="openEdit()">✎ 科目をまとめる</button>
 </div>
 
 <div class="subj" id="subj"></div>
@@ -160,24 +120,6 @@ body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-
 <div class="hist-label">これまでの記録</div>
 <div class="hist" id="hist"></div>
 
-<div class="sheet-bg" id="sheet">
-  <div class="sheet">
-    <div class="grip"></div>
-    <h3>科目をまとめる</h3>
-    <div class="lead">同じ科目が別々の名前で登録されているときは、選んで1つにまとめられます。まとめた科目は内訳から個別に戻したり、まとめ全体を解除したりできます。表示はこの画面を開いている間だけ有効です。</div>
-    <div id="optList"></div>
-    <div class="name-box" id="nameBox" style="display:none;">
-      <label>まとめた後の表示名</label>
-      <input type="text" id="mergeName" placeholder="例：国語">
-    </div>
-    <div class="acts">
-      <button class="ghost" onclick="closeEdit()">閉じる</button>
-      <button class="primary" id="btnMerge" disabled onclick="doMerge()">まとめる</button>
-    </div>
-    <button class="reset" onclick="resetMerges()">まとめをすべて解除する</button>
-  </div>
-</div>
-
 <script>
 // ═══════════════════════════════════════════
 //  設定：ここだけ自分の環境に合わせる
@@ -190,7 +132,7 @@ const MY_LIFF_ID   = '2009442207-s1e2B6Vn';              // 収集システム�
 // ═══════════════════════════════════════════
 let RAW = [];              // GASから取得した成績レコード（{exam_id,mode,exam_name,term,sort,subject,score,max,dev}）
 let STUDENT_NAME = '';     // LINEの表示名
-let mode='模試', axis='deviation', currentSubject=null, chart=null, mergeMap={}, editSel=new Set();
+let mode='模試', axis='deviation', currentSubject=null, chart=null;
 
 // ═══════════════════════════════════════════
 //  起動：LIFFでuserIdを取得 → GASから成績を取得
@@ -260,18 +202,12 @@ function showError(msg){
 // ═══════════════════════════════════════════
 //  データ整形
 // ═══════════════════════════════════════════
-const dName=s=>mergeMap[s]||s;
 const inMode=()=>RAW.filter(r=>r.mode===mode);
-function dSubjects(){const s=[];inMode().forEach(r=>{const d=dName(r.subject);if(!s.includes(d))s.push(d);});return s;}
-function members(dn){const set=new Set();inMode().forEach(r=>{if(dName(r.subject)===dn)set.add(r.subject);});return set;}
-const isMerged=dn=>members(dn).size>1;
-// 「まとめる」は表記揺れの統一（同じ科目として扱う）が目的で、得点を合算するものではない。
-// そのため各レコードの得点・満点・偏差値はそのまま1件ずつ表示し、まとめによって値を加工しない。
+function dSubjects(){const s=[];inMode().forEach(r=>{if(!s.includes(r.subject))s.push(r.subject);});return s;}
 function series(){
-  return inMode().filter(r=>dName(r.subject)===currentSubject)
+  return inMode().filter(r=>r.subject===currentSubject)
     .map(r=>({exam_id:r.exam_id,exam_name:r.exam_name,term:r.term,sort:r.sort,
-      score:r.score,max:r.max,dev:r.dev!=null?r.dev:null,
-      subLabel:r.subject!==currentSubject?r.subject:null}))
+      score:r.score,max:r.max,dev:r.dev!=null?r.dev:null}))
     .sort((a,b)=>a.sort<b.sort?-1:a.sort>b.sort?1:0);
 }
 const effAxis=()=>(mode==='定期テスト'&&axis==='deviation')?'rate':axis;
@@ -291,7 +227,7 @@ function renderChips(){
   const w=document.getElementById('subj');w.innerHTML='';const subs=dSubjects();
   if(!subs.includes(currentSubject))currentSubject=subs[0]||null;
   subs.forEach(s=>{const b=document.createElement('button');b.className='chip'+(s===currentSubject?' on':'');
-    b.innerHTML=(isMerged(s)?'<span class="dot"></span>':'')+s;
+    b.textContent=s;
     b.onclick=()=>{currentSubject=s;renderAll();};w.appendChild(b);});
 }
 function renderChart(){
@@ -337,7 +273,7 @@ function renderHist(){
   if(data.length===0){box.innerHTML='<div class="hrow"><div class="term" style="padding:6px 0;">記録がありません</div></div>';return;}
   let h=`<div class="hrow head"><span>テスト</span><span class="r">得点</span><span class="r">偏差値</span></div>`;
   data.forEach(r=>{
-    h+=`<div class="hrow"><div><div class="exam">${r.exam_name}</div>${r.subLabel?`<span class="merged-tag">元表記：${r.subLabel}</span>`:''}<div class="term">${r.term}</div></div>
+    h+=`<div class="hrow"><div><div class="exam">${r.exam_name}</div><div class="term">${r.term}</div></div>
       <div class="sc">${r.score}<span class="max">/${r.max}</span></div>
       <div class="dv ${r.dev==null?'none':''}">${r.dev!=null?r.dev:'—'}</div></div>`;});
   box.innerHTML=h;
@@ -345,57 +281,6 @@ function renderHist(){
 function renderAll(){renderButtons();renderChips();renderChart();renderSummary();renderHist();}
 function setMode(m){mode=m;currentSubject=null;renderAll();}
 function setAxis(a){if(mode==='定期テスト'&&a==='deviation')return;axis=a;renderAll();}
-
-// ═══════════════════════════════════════════
-//  科目まとめ（編集シート）
-// ═══════════════════════════════════════════
-function openEdit(){editSel=new Set();renderOpts();document.getElementById('nameBox').style.display='none';document.getElementById('btnMerge').disabled=true;document.getElementById('sheet').classList.add('show');}
-function closeEdit(){document.getElementById('sheet').classList.remove('show');renderAll();}
-function renderOpts(){
-  const l=document.getElementById('optList');l.innerHTML='';
-  dSubjects().forEach(s=>{
-    const m=isMerged(s);
-    const wrap=document.createElement('div');wrap.className='opt-wrap';
-    const row=document.createElement('div');row.className='opt'+(editSel.has(s)?' sel':'');
-    const box=document.createElement('div');box.className='box';box.textContent=editSel.has(s)?'✓':'';
-    const nm=document.createElement('div');nm.className='nm';nm.textContent=s;
-    row.appendChild(box);row.appendChild(nm);
-    if(m){const tag=document.createElement('div');tag.className='tag';tag.textContent=members(s).size+'科目';row.appendChild(tag);}
-    row.onclick=()=>{editSel.has(s)?editSel.delete(s):editSel.add(s);selChange();};
-    wrap.appendChild(row);
-    if(m){
-      // 誤って統合した場合でも、内訳から個別に戻す／まとめ全体を解除できるようにする
-      const detail=document.createElement('div');detail.className='merge-detail';
-      const head=document.createElement('div');head.className='merge-detail-head';
-      const headLabel=document.createElement('span');headLabel.textContent='内訳';
-      const unmergeAllBtn=document.createElement('button');unmergeAllBtn.className='unmerge-all';unmergeAllBtn.textContent='まとめを解除';
-      unmergeAllBtn.onclick=(e)=>{e.stopPropagation();unmergeGroup(s);};
-      head.appendChild(headLabel);head.appendChild(unmergeAllBtn);
-      detail.appendChild(head);
-      members(s).forEach(o=>{
-        const chip=document.createElement('span');chip.className='member-chip';
-        const label=document.createElement('span');label.textContent=o;
-        chip.appendChild(label);
-        const rm=document.createElement('button');rm.className='member-remove';rm.textContent='×';
-        rm.onclick=(e)=>{e.stopPropagation();unmergeOne(o);};
-        chip.appendChild(rm);
-        detail.appendChild(chip);
-      });
-      wrap.appendChild(detail);
-    }
-    l.appendChild(wrap);
-  });
-}
-function selChange(){renderOpts();const n=editSel.size;const nb=document.getElementById('nameBox');const b=document.getElementById('btnMerge');
-  if(n>=2){nb.style.display='block';document.getElementById('mergeName').value=[...editSel][0];b.disabled=false;}
-  else{nb.style.display='none';b.disabled=true;}}
-function doMerge(){const nm=(document.getElementById('mergeName').value||'').trim()||[...editSel][0];
-  editSel.forEach(dn=>members(dn).forEach(o=>mergeMap[o]=nm));currentSubject=nm;
-  resetEditSelUI();}
-function unmergeGroup(dn){members(dn).forEach(o=>delete mergeMap[o]);if(currentSubject===dn)currentSubject=null;resetEditSelUI();}
-function unmergeOne(o){delete mergeMap[o];resetEditSelUI();}
-function resetEditSelUI(){editSel=new Set();renderOpts();document.getElementById('nameBox').style.display='none';document.getElementById('btnMerge').disabled=true;}
-function resetMerges(){mergeMap={};resetEditSelUI();}
 
 // 起動
 boot();

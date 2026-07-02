@@ -100,11 +100,7 @@
         .exam-name-input:focus { border-color: var(--orange); }
 
 
-        /* 科目自由入力 */
         .subject-wrap { display: flex; flex-direction: column; flex: 1; gap: 4px; }
-        .input-subject-custom { border: none; border-bottom: 1.5px solid var(--orange); outline: none; font-size: 15px; font-weight: bold; color: #1A1A1A; padding: 2px 0; background: none; width: 100%; display: none; }
-        .input-subject-custom.visible { display: block; }
-        .btn-custom-toggle { font-size: 10px; color: var(--orange); background: none; border: none; cursor: pointer; padding: 0; text-align: left; white-space: nowrap; }
 
         /* 志望校入力 */
         .school-section { margin-top: 16px; }
@@ -566,19 +562,13 @@ function addRow(subject, score, max_score, deviation, level, average_score, meta
     const isUnknownSubject = !normalizedSubject && subject;
     if (isUnknownSubject) row.classList.add('low-confidence');
 
-    // normalizedSubjectがなくAIが読み取った科目名がある場合はカスタム入力として扱う
-    const isCustom = !normalizedSubject && !!subject;
-    const customVal = isCustom ? escapeHtml(subject) : '';
-
     let subjectHtml = `<div class="subject-wrap">`;
-    subjectHtml += `<select class="input-subject-rich input-subject" onchange="toggleCustomSubject(this)">`;
+    subjectHtml += `<select class="input-subject-rich input-subject">`;
     subjectHtml += `<option value="">選択してください</option>`;
     subjectOptions.forEach(opt => {
         subjectHtml += `<option value="${opt}" ${opt === normalizedSubject ? 'selected' : ''}>${opt}</option>`;
     });
-    subjectHtml += `<option value="__custom__" ${isCustom ? 'selected' : ''}>✏️ 自由入力...</option>`;
     subjectHtml += `</select>`;
-    subjectHtml += `<input type="text" class="input-subject-custom${isCustom ? ' visible' : ''}" placeholder="科目名を入力" value="${customVal}">`;
     if (isUnknownSubject) subjectHtml += `<span class="confidence-badge">要確認:${escapeHtml(subject)}</span>`;
     subjectHtml += `</div>`;
 
@@ -686,17 +676,6 @@ const ITEM_H = 44;
 const CENTER_TOP = 88;
 let pickerWrap = null, pickerType = null;
 let drumsState = [];
-
-function toggleCustomSubject(selectEl) {
-    const customInput = selectEl.closest('.subject-wrap').querySelector('.input-subject-custom');
-    if (selectEl.value === '__custom__') {
-        customInput.classList.add('visible');
-        customInput.focus();
-    } else {
-        customInput.classList.remove('visible');
-        customInput.value = '';
-    }
-}
 
 function openPickerFromRow(wrapEl, type) {
     pickerWrap = wrapEl;
@@ -870,10 +849,7 @@ async function finalSubmit() {
     const finalScores = [];
     document.querySelectorAll('.score-row').forEach(row => {
         const selectEl = row.querySelector('.input-subject');
-        const customEl = row.querySelector('.input-subject-custom');
-        const sub = selectEl.value === '__custom__'
-            ? (customEl.value.trim() || '')
-            : selectEl.value;
+        const sub = selectEl.value;
         const sco = row.querySelector('.input-score-num').value;
         if (sub) {
             const hasChanged = (sub !== row.dataset.originalSubject) || (sco != row.dataset.originalScore);
