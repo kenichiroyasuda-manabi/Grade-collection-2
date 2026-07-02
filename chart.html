@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>成績推移</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<style>
+:root{
+  --orange:#F2601A; --orange-deep:#C2410C; --orange-wash:#FFF4EE;
+  --ink:#211A16; --ink-2:#7A6E67; --ink-3:#A99E97;
+  --line:#EFE9E4; --line-2:#E4DCD5;
+  --bg:#FBF8F5; --card:#FFFFFF;
+  --grow:#0E8A55; --grow-wash:#E7F5EE;
+  --drop:#C4453A; --drop-wash:#FBECEA;
+  --dev:#5B4BC4; --dev-wash:#F1EEFC;
+  --shadow:0 1px 2px rgba(33,26,22,.04), 0 4px 16px rgba(33,26,22,.05);
+  --shadow-lift:0 2px 6px rgba(242,96,26,.24);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-serif;background:var(--bg);color:var(--ink);padding:20px 16px 40px;max-width:520px;margin:0 auto;line-height:1.5;}
+
+/* ヘッダー */
+.top{margin-bottom:20px;}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--orange);text-transform:uppercase;margin-bottom:5px;}
+.top h1{font-size:25px;font-weight:800;letter-spacing:-.01em;display:flex;align-items:baseline;gap:9px;}
+.top h1 .who{font-size:14px;font-weight:600;color:var(--ink-2);letter-spacing:0;}
+
+/* モード：セグメント（下線タブ風） */
+.mode{display:flex;gap:26px;border-bottom:1.5px solid var(--line-2);margin-bottom:18px;}
+.mode button{border:none;background:none;padding:10px 2px 12px;font-size:15px;font-weight:800;color:var(--ink-3);cursor:pointer;position:relative;font-family:inherit;transition:color .2s;}
+.mode button.on{color:var(--ink);}
+.mode button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1.5px;height:2.5px;background:var(--orange);border-radius:2px;}
+
+/* コントロール行：軸トグル + 編集 */
+.controls{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.axis{display:inline-flex;background:#F0EAE5;border-radius:11px;padding:3px;gap:2px;}
+.axis button{border:none;background:none;padding:8px 16px;border-radius:9px;font-size:13px;font-weight:700;color:var(--ink-2);cursor:pointer;font-family:inherit;transition:.18s;}
+.axis button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(33,26,22,.12);}
+.axis button:disabled{opacity:.35;cursor:default;}
+.edit-btn{margin-left:auto;border:1.5px solid var(--line-2);background:var(--card);border-radius:11px;padding:9px 14px;font-size:13px;font-weight:700;color:var(--ink-2);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:.15s;}
+.edit-btn:active{background:var(--orange-wash);border-color:var(--orange);color:var(--orange-deep);}
+
+/* 科目チップ */
+.subj{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.subj::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;border:1.5px solid var(--line-2);background:var(--card);padding:9px 16px;border-radius:22px;font-size:13.5px;font-weight:700;color:var(--ink-2);cursor:pointer;transition:.15s;white-space:nowrap;font-family:inherit;display:inline-flex;align-items:center;gap:5px;}
+.chip.on{border-color:var(--orange);background:var(--orange);color:#fff;box-shadow:var(--shadow-lift);}
+.chip .dot{width:5px;height:5px;border-radius:50%;background:var(--orange);}
+.chip.on .dot{background:rgba(255,255,255,.85);}
+
+/* グラフカード */
+.card{background:var(--card);border-radius:20px;padding:20px 18px 14px;box-shadow:var(--shadow);margin-bottom:14px;}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.card-top .subj-name{font-size:17px;font-weight:800;letter-spacing:-.01em;}
+.card-top .metric{font-size:11px;font-weight:800;color:var(--orange-deep);background:var(--orange-wash);padding:5px 10px;border-radius:8px;letter-spacing:.02em;}
+.card-note{font-size:11.5px;color:var(--ink-3);margin-bottom:14px;font-weight:500;}
+.canvas-wrap{position:relative;height:250px;}
+.empty{text-align:center;padding:54px 24px;color:var(--ink-2);}
+.empty .big{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.empty .small{font-size:12.5px;line-height:1.7;color:var(--ink-3);}
+
+/* サマリ */
+.summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:22px;}
+.stat{background:var(--card);border-radius:15px;padding:15px 8px 13px;text-align:center;box-shadow:var(--shadow);}
+.stat .label{font-size:10.5px;color:var(--ink-3);font-weight:700;margin-bottom:7px;letter-spacing:.04em;}
+.stat .val{font-size:25px;font-weight:800;line-height:1;letter-spacing:-.02em;}
+.stat .val small{font-size:13px;font-weight:700;color:var(--ink-3);}
+.stat .delta{font-size:11px;font-weight:800;margin-top:6px;display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;}
+.stat.up .delta{color:var(--grow);background:var(--grow-wash);}
+.stat.down .delta{color:var(--drop);background:var(--drop-wash);}
+.stat.flat .delta{color:var(--ink-3);background:#F2ECE7;}
+
+/* 履歴 */
+.hist-label{font-size:12px;font-weight:800;color:var(--ink-2);letter-spacing:.04em;margin:0 4px 9px;}
+.hist{background:var(--card);border-radius:18px;padding:4px 0;box-shadow:var(--shadow);overflow:hidden;}
+.hrow{display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line);align-items:center;}
+.hrow:last-child{border-bottom:none;}
+.hrow.head{padding:11px 18px;}
+.hrow.head span{font-size:10.5px;color:var(--ink-3);font-weight:800;letter-spacing:.04em;}
+.hrow.head .r{text-align:right;}
+.hrow .exam{font-size:13.5px;font-weight:700;letter-spacing:-.01em;}
+.hrow .merged-tag{font-size:10px;color:var(--orange-deep);background:var(--orange-wash);display:inline-block;padding:1px 7px;border-radius:5px;margin-top:3px;font-weight:700;}
+.hrow .term{font-size:11px;color:var(--ink-3);font-weight:500;margin-top:3px;}
+.hrow .sc{font-size:15px;font-weight:800;text-align:right;letter-spacing:-.01em;}
+.hrow .sc .max{font-size:11px;color:var(--ink-3);font-weight:600;}
+.hrow .dv{font-size:15px;font-weight:800;color:var(--dev);text-align:right;min-width:44px;letter-spacing:-.01em;}
+.hrow .dv.none{color:var(--ink-3);font-weight:600;}
+
+/* 編集シート */
+.sheet-bg{position:fixed;inset:0;background:rgba(33,26,22,.42);z-index:100;display:none;align-items:flex-end;backdrop-filter:blur(2px);}
+.sheet-bg.show{display:flex;animation:fade .18s ease;}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{width:100%;max-width:520px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;padding:22px 18px calc(env(safe-area-inset-bottom,0) + 22px);max-height:86vh;overflow-y:auto;animation:slideup .24s cubic-bezier(.2,.8,.3,1);}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet .grip{width:38px;height:4px;background:var(--line-2);border-radius:3px;margin:0 auto 16px;}
+.sheet h3{font-size:18px;font-weight:800;margin-bottom:6px;}
+.sheet .lead{font-size:12.5px;color:var(--ink-2);margin-bottom:18px;line-height:1.65;}
+.opt{display:flex;align-items:center;gap:13px;padding:13px 12px;border-radius:12px;border:1.5px solid var(--line-2);margin-bottom:8px;cursor:pointer;transition:.15s;}
+.opt.sel{border-color:var(--orange);background:var(--orange-wash);}
+.opt .box{width:23px;height:23px;border-radius:7px;border:2px solid var(--line-2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:900;transition:.15s;}
+.opt.sel .box{background:var(--orange);border-color:var(--orange);}
+.opt .nm{font-size:14.5px;font-weight:700;}
+.opt .tag{font-size:10.5px;color:var(--orange-deep);margin-left:auto;font-weight:700;background:var(--orange-wash);padding:2px 8px;border-radius:6px;}
+.name-box{margin-top:12px;padding:15px;background:var(--orange-wash);border-radius:14px;animation:fade .2s;}
+.name-box label{font-size:12px;font-weight:800;color:var(--orange-deep);display:block;margin-bottom:9px;}
+.name-box input{width:100%;border:1.5px solid var(--orange);border-radius:10px;padding:11px 13px;font-size:15px;font-weight:700;outline:none;font-family:inherit;background:#fff;color:var(--ink);}
+.acts{display:flex;gap:10px;margin-top:18px;}
+.acts button{flex:1;padding:14px;border-radius:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;border:none;transition:.15s;}
+.acts .primary{background:var(--orange);color:#fff;box-shadow:var(--shadow-lift);}
+.acts .primary:disabled{background:var(--line-2);color:var(--ink-3);box-shadow:none;}
+.acts .ghost{background:#F0EAE5;color:var(--ink-2);flex:0 0 auto;padding:14px 20px;}
+.reset{width:100%;margin-top:10px;padding:11px;border:none;background:none;font-size:12px;color:var(--ink-3);font-weight:700;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:2px;}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="eyebrow">成績の記録</div>
+  <h1>成績推移 <span class="who" id="who"></span></h1>
+</div>
+
+<div class="mode">
+  <button id="m-mock" class="on" onclick="setMode('模試')">模試</button>
+  <button id="m-test" onclick="setMode('定期テスト')">定期テスト</button>
+</div>
+
+<div class="controls">
+  <div class="axis">
+    <button id="ax-dev" class="on" onclick="setAxis('deviation')">偏差値</button>
+    <button id="ax-rate" onclick="setAxis('rate')">得点率</button>
+  </div>
+  <button class="edit-btn" onclick="openEdit()">✎ 科目をまとめる</button>
+</div>
+
+<div class="subj" id="subj"></div>
+
+<div class="card">
+  <div class="card-top">
+    <span class="subj-name" id="cName"></span>
+    <span class="metric" id="cMetric">偏差値</span>
+  </div>
+  <div class="card-note" id="cNote"></div>
+  <div class="canvas-wrap" id="cWrap"><canvas id="chart"></canvas></div>
+</div>
+
+<div class="summary" id="summary"></div>
+
+<div class="hist-label">これまでの記録</div>
+<div class="hist" id="hist"></div>
+
+<div class="sheet-bg" id="sheet">
+  <div class="sheet">
+    <div class="grip"></div>
+    <h3>科目をまとめる</h3>
+    <div class="lead">同じ科目が別々の名前で登録されているときは、選んで1つにまとめられます。まとめた表示はこの画面を開いている間だけ有効です。</div>
+    <div id="optList"></div>
+    <div class="name-box" id="nameBox" style="display:none;">
+      <label>まとめた後の表示名</label>
+      <input type="text" id="mergeName" placeholder="例：国語">
+    </div>
+    <div class="acts">
+      <button class="ghost" onclick="closeEdit()">閉じる</button>
+      <button class="primary" id="btnMerge" disabled onclick="doMerge()">まとめる</button>
+    </div>
+    <button class="reset" onclick="resetMerges()">まとめをすべて解除する</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  設定：ここだけ自分の環境に合わせる
+// ═══════════════════════════════════════════
+const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzg3zJCXkBeAz5yr3ANyaACRSfQK_lG6HCPQxM4lCWYdnIcHWShLW7ePzC0umKxoI6q/exec';  // 収集システムと同じURL
+const MY_LIFF_ID   = '2009442207-s1e2B6Vn';              // 収集システムと同じLIFF ID
+
+// ═══════════════════════════════════════════
+//  状態
+// ═══════════════════════════════════════════
+let RAW = [];              // GASから取得した成績レコード（{exam_id,mode,exam_name,term,sort,subject,score,max,dev}）
+let STUDENT_NAME = '';     // LINEの表示名
+let mode='模試', axis='deviation', currentSubject=null, chart=null, mergeMap={}, editSel=new Set();
+
+// ═══════════════════════════════════════════
+//  起動：LIFFでuserIdを取得 → GASから成績を取得
+// ═══════════════════════════════════════════
+async function boot(){
+  showLoading('読み込んでいます…');
+  let lineUserId = null;
+  try{
+    await liff.init({ liffId: MY_LIFF_ID });
+    if(!liff.isLoggedIn()){ liff.login(); return; }
+    const prof = await liff.getProfile();
+    lineUserId = prof.userId;
+    STUDENT_NAME = prof.displayName || '';
+  }catch(e){
+    // LIFF外（PCブラウザ等）で開いた場合のデバッグ用フォールバック
+    console.log('LIFF init failed (debug mode):', e);
+  }
+
+  // ▼▼ 動作確認用：PCブラウザで開いてGAS未接続のときはダミーデータで表示 ▼▼
+  //   本番でLINEから使うときは、この if ブロックごと削除してよい
+  if(!lineUserId && GAS_ENDPOINT.includes('ここに')){
+    RAW = DEMO_DATA(); STUDENT_NAME = '田中 太郎';
+    document.getElementById('who').textContent = STUDENT_NAME+'さん';
+    renderAll(); return;
+  }
+  // ▲▲ ここまで動作確認用 ▲▲
+
+  try{
+    const res = await fetch(GAS_ENDPOINT, {
+      method:'POST',
+      redirect:'follow',
+      headers:{ 'Content-Type':'text/plain' },  // 収集システムと同じくpreflight回避
+      body: JSON.stringify({ action:'chart', line_user_id: lineUserId })
+    });
+    const data = JSON.parse(await res.text());
+    if(data.status !== 'ok'){ showError(data.message || 'データの取得に失敗しました。'); return; }
+
+    RAW = (data.records || []).map(r => ({
+      exam_id:r.exam_id, mode:r.mode, exam_name:r.exam_name, term:r.term,
+      sort:r.sort, subject:r.subject, score:r.score, max:r.max, dev:r.dev
+    }));
+
+    if(RAW.length === 0){
+      showError('まだ成績の記録がありません。<br>成績を提出すると、ここに推移が表示されます。');
+      return;
+    }
+    document.getElementById('who').textContent = STUDENT_NAME ? STUDENT_NAME+'さん' : '';
+    renderAll();
+  }catch(e){
+    showError('通信エラーが発生しました。<br>電波の良い場所で開き直してください。');
+    console.log(e);
+  }
+}
+
+function showLoading(msg){
+  document.getElementById('cWrap').innerHTML =
+    '<div class="empty"><div class="small">'+msg+'</div></div>';
+}
+function showError(msg){
+  document.getElementById('cWrap').innerHTML =
+    '<div class="empty"><div class="big">表示できませんでした</div><div class="small">'+msg+'</div></div>';
+  document.getElementById('summary').innerHTML='';
+  document.getElementById('hist').innerHTML='';
+  document.getElementById('subj').innerHTML='';
+}
+
+// ═══════════════════════════════════════════
+//  データ整形
+// ═══════════════════════════════════════════
+const dName=s=>mergeMap[s]||s;
+const inMode=()=>RAW.filter(r=>r.mode===mode);
+function dSubjects(){const s=[];inMode().forEach(r=>{const d=dName(r.subject);if(!s.includes(d))s.push(d);});return s;}
+function members(dn){const set=new Set();inMode().forEach(r=>{if(dName(r.subject)===dn)set.add(r.subject);});return set;}
+const isMerged=dn=>members(dn).size>1;
+function series(){
+  const recs=inMode().filter(r=>dName(r.subject)===currentSubject);const by={};
+  recs.forEach(r=>{if(!by[r.exam_id])by[r.exam_id]={exam_id:r.exam_id,exam_name:r.exam_name,term:r.term,sort:r.sort,score:0,max:0,devs:[],subs:new Set()};
+    const e=by[r.exam_id];e.score+=r.score;e.max+=r.max;if(r.dev!=null)e.devs.push(r.dev);e.subs.add(r.subject);});
+  return Object.values(by).map(e=>({...e,dev:e.devs.length?Math.round(e.devs.reduce((a,b)=>a+b,0)/e.devs.length*10)/10:null,subLabel:[...e.subs].join('＋')}))
+    .sort((a,b)=>a.sort<b.sort?-1:a.sort>b.sort?1:0);
+}
+const effAxis=()=>(mode==='定期テスト'&&axis==='deviation')?'rate':axis;
+
+// ═══════════════════════════════════════════
+//  描画
+// ═══════════════════════════════════════════
+function renderButtons(){
+  document.getElementById('m-mock').classList.toggle('on',mode==='模試');
+  document.getElementById('m-test').classList.toggle('on',mode==='定期テスト');
+  const ax=effAxis();
+  document.getElementById('ax-dev').classList.toggle('on',ax==='deviation');
+  document.getElementById('ax-rate').classList.toggle('on',ax==='rate');
+  document.getElementById('ax-dev').disabled=(mode==='定期テスト');
+}
+function renderChips(){
+  const w=document.getElementById('subj');w.innerHTML='';const subs=dSubjects();
+  if(!subs.includes(currentSubject))currentSubject=subs[0]||null;
+  subs.forEach(s=>{const b=document.createElement('button');b.className='chip'+(s===currentSubject?' on':'');
+    b.innerHTML=(isMerged(s)?'<span class="dot"></span>':'')+s;
+    b.onclick=()=>{currentSubject=s;renderAll();};w.appendChild(b);});
+}
+function renderChart(){
+  const data=series();const isDev=effAxis()==='deviation';
+  document.getElementById('cName').textContent=currentSubject||'—';
+  document.getElementById('cMetric').textContent=isDev?'偏差値':'得点率';
+  const note=document.getElementById('cNote');
+  note.textContent=(mode==='定期テスト')?'定期テストは校内順位のため得点率で表示します':'模試の全国偏差値の推移です';
+  const wrap=document.getElementById('cWrap');
+  if(chart){chart.destroy();chart=null;}
+  if(data.length===0){wrap.innerHTML='<div class="empty"><div class="big">まだ記録がありません</div><div class="small">この科目の成績を提出すると、<br>ここに推移が表示されます。</div></div>';return;}
+  wrap.innerHTML='<canvas id="chart"></canvas>';
+  const ctx=document.getElementById('chart');
+  const single=data.length===1;
+  chart=new Chart(ctx,{type:'line',data:{labels:data.map(r=>r.term),datasets:[{
+    data:data.map(r=>isDev?r.dev:Math.round(r.score/r.max*1000)/10),
+    borderColor:'#F2601A',borderWidth:3,tension:.34,fill:true,
+    backgroundColor:c=>{const a=c.chart.ctx.createLinearGradient(0,0,0,250);a.addColorStop(0,'rgba(242,96,26,.16)');a.addColorStop(1,'rgba(242,96,26,0)');return a;},
+    pointBackgroundColor:'#fff',pointBorderColor:'#F2601A',pointBorderWidth:2.5,pointRadius:single?6:5,pointHoverRadius:8,spanGaps:true}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:8}},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#211A16',padding:11,cornerRadius:9,titleFont:{size:11,weight:'600'},bodyFont:{size:14,weight:'800'},displayColors:false,
+        callbacks:{label:c=>isDev?`偏差値 ${c.parsed.y}`:`得点率 ${c.parsed.y}%`}}},
+      scales:{y:{beginAtZero:false,suggestedMin:isDev?40:0,suggestedMax:isDev?70:100,
+        ticks:{font:{size:11},color:'#A99E97',padding:6,callback:v=>isDev?v:v+'%'},grid:{color:'#F3EEE9'},border:{display:false}},
+        x:{ticks:{font:{size:11,weight:'600'},color:'#7A6E67'},grid:{display:false},border:{display:false}}}}});
+}
+function renderSummary(){
+  const box=document.getElementById('summary');const data=series();
+  if(data.length===0){box.innerHTML='';return;}
+  const isDev=effAxis()==='deviation';const unit=isDev?'':'%';
+  const v=r=>isDev?r.dev:Math.round(r.score/r.max*1000)/10;
+  const latest=v(data[data.length-1]),prev=data.length>1?v(data[data.length-2]):null,first=v(data[0]);
+  const delta=prev!=null?Math.round((latest-prev)*10)/10:null,total=Math.round((latest-first)*10)/10;
+  const cls=d=>d==null?'flat':d>0?'up':d<0?'down':'flat';
+  const arw=d=>d==null?'—':d>0?`↑ +${d}`:d<0?`↓ ${Math.abs(d)}`:'→ 0';
+  box.innerHTML=`
+    <div class="stat"><div class="label">最新</div><div class="val">${latest}<small>${unit}</small></div></div>
+    <div class="stat ${cls(delta)}"><div class="label">前回から</div><div class="val">${delta==null?'—':(delta>0?'+':delta<0?'−':'')+Math.abs(delta)}</div><div class="delta">${arw(delta)}</div></div>
+    <div class="stat ${cls(total)}"><div class="label">初回から</div><div class="val">${total>0?'+':total<0?'−':''}${Math.abs(total)}</div><div class="delta">${arw(total)}</div></div>`;
+}
+function renderHist(){
+  const box=document.getElementById('hist');const data=[...series()].reverse();
+  if(data.length===0){box.innerHTML='<div class="hrow"><div class="term" style="padding:6px 0;">記録がありません</div></div>';return;}
+  let h=`<div class="hrow head"><span>テスト</span><span class="r">得点</span><span class="r">偏差値</span></div>`;
+  data.forEach(r=>{const merged=r.subLabel&&r.subLabel.includes('＋');
+    h+=`<div class="hrow"><div><div class="exam">${r.exam_name}</div>${merged?`<span class="merged-tag">${r.subLabel}</span>`:''}<div class="term">${r.term}</div></div>
+      <div class="sc">${r.score}<span class="max">/${r.max}</span></div>
+      <div class="dv ${r.dev==null?'none':''}">${r.dev!=null?r.dev:'—'}</div></div>`;});
+  box.innerHTML=h;
+}
+function renderAll(){renderButtons();renderChips();renderChart();renderSummary();renderHist();}
+function setMode(m){mode=m;currentSubject=null;renderAll();}
+function setAxis(a){if(mode==='定期テスト'&&a==='deviation')return;axis=a;renderAll();}
+
+// ═══════════════════════════════════════════
+//  科目まとめ（編集シート）
+// ═══════════════════════════════════════════
+function openEdit(){editSel=new Set();renderOpts();document.getElementById('nameBox').style.display='none';document.getElementById('btnMerge').disabled=true;document.getElementById('sheet').classList.add('show');}
+function closeEdit(){document.getElementById('sheet').classList.remove('show');renderAll();}
+function renderOpts(){
+  const l=document.getElementById('optList');l.innerHTML='';
+  dSubjects().forEach(s=>{const m=isMerged(s);const it=document.createElement('div');
+    it.className='opt'+(editSel.has(s)?' sel':'');
+    it.innerHTML=`<div class="box">${editSel.has(s)?'✓':''}</div><div class="nm">${s}</div>${m?`<div class="tag">${members(s).size}科目</div>`:''}`;
+    it.onclick=()=>{editSel.has(s)?editSel.delete(s):editSel.add(s);selChange();};l.appendChild(it);});
+}
+function selChange(){renderOpts();const n=editSel.size;const nb=document.getElementById('nameBox');const b=document.getElementById('btnMerge');
+  if(n>=2){nb.style.display='block';document.getElementById('mergeName').value=[...editSel][0];b.disabled=false;}
+  else{nb.style.display='none';b.disabled=true;}}
+function doMerge(){const nm=(document.getElementById('mergeName').value||'').trim()||[...editSel][0];
+  editSel.forEach(dn=>members(dn).forEach(o=>mergeMap[o]=nm));currentSubject=nm;editSel=new Set();
+  renderOpts();document.getElementById('nameBox').style.display='none';document.getElementById('btnMerge').disabled=true;}
+function resetMerges(){mergeMap={};editSel=new Set();renderOpts();document.getElementById('nameBox').style.display='none';document.getElementById('btnMerge').disabled=true;}
+
+// 起動
+boot();
+
+// 動作確認用ダミーデータ（本番では未使用。上のデバッグブロックと一緒に消してOK）
+function DEMO_DATA(){
+  const rows=[];const p=(e,m,n,t,s,su,sc,mx,dv)=>rows.push({exam_id:e,mode:m,exam_name:n,term:t,sort:s,subject:su,score:sc,max:mx,dev:dv});
+  p("mk1","模試","北海道学力コンクール","2024年4月",1,"英語リーディング",120,200,54.0);
+  p("mk1","模試","北海道学力コンクール","2024年4月",1,"数学①(Ⅰ,A)",58,100,50.2);
+  p("mk1","模試","北海道学力コンクール","2024年4月",1,"国語",110,200,51.5);
+  p("mk2","模試","北海道学力コンクール","2024年8月",2,"英語リーディング",134,200,57.2);
+  p("mk2","模試","北海道学力コンクール","2024年8月",2,"数学①(Ⅰ,A)",62,100,52.0);
+  p("mk2","模試","北海道学力コンクール","2024年8月",2,"国語(現代文)",118,200,53.0);
+  p("mk3","模試","河合 全統記述","2024年10月",3,"英語リーディング",158,200,63.1);
+  p("mk3","模試","河合 全統記述","2024年10月",3,"数学①(Ⅰ,A)",55,100,48.8);
+  p("mk3","模試","河合 全統記述","2024年10月",3,"国語",132,200,56.0);
+  p("tk1","定期テスト","1学期中間","2024年5月",4,"英語リーディング",72,100,null);
+  p("tk1","定期テスト","1学期中間","2024年5月",4,"数学①(Ⅰ,A)",65,100,null);
+  p("tk1","定期テスト","1学期中間","2024年5月",4,"国語",80,100,null);
+  p("tk2","定期テスト","1学期期末","2024年7月",5,"英語リーディング",84,100,null);
+  p("tk2","定期テスト","1学期期末","2024年7月",5,"数学①(Ⅰ,A)",58,100,null);
+  p("tk2","定期テスト","1学期期末","2024年7月",5,"国語",76,100,null);
+  return rows;
+}
+
+</script>
+</body>
+</html>
