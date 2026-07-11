@@ -99,7 +99,7 @@
         .exam-name-input { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; font-size: 15px; outline: none; background: #fff; transition: border-color 0.2s; }
         .exam-name-input:focus { border-color: var(--orange); }
 
-
+        input[type="month"].exam-name-input { -webkit-appearance: none; appearance: none; display: block; height: 43px; padding-top: 0; padding-bottom: 0; font-family: inherit; color: #1A1A1A; text-align: left; }
         .subject-wrap { display: flex; flex-direction: column; flex: 1; gap: 4px; }
 
         /* 志望校入力 */
@@ -176,7 +176,7 @@
     <div class="card">
         <h3 id="mode-title" style="margin-bottom:12px; color:var(--orange); font-size:18px;"></h3>
 
-        <!-- 生徒ID入力 -->
+              <!-- 生徒ID入力 -->
         <div class="exam-name-input-wrap">
             <label>生徒ID <span style="color:var(--red);">*</span></label>
             <input type="text" id="manual-student-id" class="exam-name-input" placeholder="生徒IDを入力してください" inputmode="text">
@@ -188,7 +188,7 @@
             <input type="text" id="manual-exam-name" class="exam-name-input" placeholder="例：全統共通テスト模試">
         </div>
         <div class="exam-name-input-wrap">
-            <label>実施時期</label>
+            <label>実施時期 <span style="color:var(--red);">*</span></label>
             <input type="month" id="manual-exam-date" class="exam-name-input">
         </div>
 
@@ -426,6 +426,10 @@ async function startAnalysis() {
     const manualStudentId = document.getElementById('manual-student-id').value.trim();
     if (!manualStudentId) {
         alert('生徒IDを入力してください。');
+        return;
+    }
+    if (!document.getElementById('manual-exam-date').value) {
+        alert('実施時期を選択してください。');
         return;
     }
 
