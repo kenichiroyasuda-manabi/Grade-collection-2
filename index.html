@@ -189,7 +189,7 @@
         </div>
         <div class="exam-name-input-wrap">
             <label>実施時期</label>
-            <input type="text" id="manual-exam-date" class="exam-name-input" placeholder="例：2024年11月">
+            <input type="month" id="manual-exam-date" class="exam-name-input">
         </div>
 
         <!-- 撮影ガイド -->
@@ -297,7 +297,7 @@ let userId = "DEBUG", uploadedFiles = [], aiResult = null, selectedMode = "";
 
 // 科目プルダウンの選択肢（高校の模試科目 + 小中学校の科目）
 const SUBJECT_OPTIONS = [
-     "英語リーディング", "英語リスニング", "英語(コミュニケーション)", "英語(論理)", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ",
+    "英語リーディング", "英語リスニング", "英語(コミュニケーション)", "英語(論理)", "数学①(Ⅰ,A)", "数学②(Ⅱ,B,C)", "数学Ⅲ",
     "国語", "国語(現代文)", "国語(古文)", "国語(漢文)",
     "物理基礎", "化学基礎", "生物基礎", "地学基礎", "物理", "化学", "生物", "地学",
     "日本史", "世界史", "地理", "公共/倫理", "公共/政治・経済", "情報",
@@ -464,7 +464,10 @@ async function startAnalysis() {
 
         // 手入力の生徒ID・模試名・実施時期を反映
         const manualName = document.getElementById('manual-exam-name').value.trim();
-        const manualDate = document.getElementById('manual-exam-date').value.trim();
+        // type="month" の値は "2025-04" 形式なので、既存データと同じ「2025年4月」形式に揃える
+        let manualDate = document.getElementById('manual-exam-date').value.trim();
+        const ym = manualDate.match(/^(\d{4})-(\d{2})$/);
+        if (ym) manualDate = ym[1] + '年' + parseInt(ym[2], 10) + '月';
         if (manualName) data.exam_name = manualName;
         if (manualDate) data.exam_date = manualDate;
 
@@ -868,6 +871,20 @@ async function finalSubmit() {
 
     const manualTotal = document.getElementById('total-score-value').value;
     try {
+        // LIFF初期化失敗のまま提出すると student_id が "DEBUG" で記録され、
+        // 成績推移(chart)で本人の成績を照合できなくなるため再取得を試みる
+        if (userId === "DEBUG") {
+            try {
+                const p = await liff.getProfile();
+                userId = p.userId;
+            } catch(_) {
+                if (!confirm("LINEアカウント情報を取得できませんでした。\nこのまま提出すると成績推移グラフに表示されない場合があります。\n提出を続けますか？")) {
+                    document.getElementById('phase-loading').style.display = 'none';
+                    document.getElementById('phase-confirm').style.display = 'block';
+                    return;
+                }
+            }
+        }
         const res = await fetch(GAS_ENDPOINT, {
             method: 'POST',
             redirect: 'follow',
