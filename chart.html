@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>成績推移</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -125,8 +126,10 @@ body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-
 //  設定：ここだけ自分の環境に合わせる
 // ═══════════════════════════════════════════
 const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwHbfg6wxMK2FOzf1ws9tXx04q3cVtKJydV2hm2ch4Vp4NjaM8pbTJG4YiKrAas9Q8c/exec';  // 収集システムと同じURL
-const MY_LIFF_ID   = '2009442207-cCpmXVnx';              // 収集システムと同じLIFF ID
+const MY_LIFF_ID   = '2009442207-cCpmXVnx';              // 成績推移(chart)用のLIFF ID ※提出用(index)とは別
 
+  
+  // 収集システムと同じLIFF ID
 // ═══════════════════════════════════════════
 //  状態
 // ═══════════════════════════════════════════
@@ -147,8 +150,16 @@ async function boot(){
     lineUserId = prof.userId;
     STUDENT_NAME = prof.displayName || '';
   }catch(e){
-    // LIFF外（PCブラウザ等）で開いた場合のデバッグ用フォールバック
-    console.log('LIFF init failed (debug mode):', e);
+    console.log('LIFF init failed:', e);
+  }
+
+  // userIdが取れないままGASに問い合わせても照合できないので、ここで案内を出す
+  if(!lineUserId){
+    showError('LINEのアカウント情報を取得できませんでした。<br>'
+      +'LINEアプリ内で、こちらのリンクから開き直してください。<br>'
+      +'<a href="https://liff.line.me/'+MY_LIFF_ID+'" style="color:var(--orange);font-weight:700;">成績推移をひらく</a><br><br>'
+      +'<span style="font-size:11px;">初回に表示される「許可する」を押してください。<br>解決しない場合はLINEアプリを最新版に更新してください。</span>');
+    return;
   }
 
   // ▼▼ 動作確認用：PCブラウザで開いてGAS未接続のときはダミーデータで表示 ▼▼
@@ -176,7 +187,8 @@ async function boot(){
     }));
 
     if(RAW.length === 0){
-      showError('まだ成績の記録がありません。<br>成績を提出すると、ここに推移が表示されます。');
+      showError('まだ成績の記録がありません。<br>成績を提出すると、ここに推移が表示されます。'
+        +'<br><br><span style="font-size:9px;color:#C8BEB7;word-break:break-all;">ID: '+(lineUserId||'不明')+'</span>');
       return;
     }
     document.getElementById('who').textContent = STUDENT_NAME ? STUDENT_NAME+'さん' : '';
