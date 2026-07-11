@@ -99,9 +99,9 @@
         .exam-name-input { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; font-size: 15px; outline: none; background: #fff; transition: border-color 0.2s; }
         .exam-name-input:focus { border-color: var(--orange); }
 
-        input[type="month"].exam-name-input { -webkit-appearance: none; appearance: none; display: block; height: 43px; padding-top: 0; padding-bottom: 0; font-family: inherit; color: #1A1A1A; text-align: left; }
-        .subject-wrap { display: flex; flex-direction: column; flex: 1; gap: 4px; }
-
+                input[type="month"].exam-name-input { -webkit-appearance: none; appearance: none; display: block; height: 43px; padding-top: 0; padding-bottom: 0; font-family: inherit; color: #1A1A1A; text-align: center; }
+        /* iOSは月入力の値を独自描画するため、擬似要素で上下左右の中央に揃える */
+        input[type="month"].exam-name-input::-webkit-date-and-time-value { text-align: center; line-height: 41px; margin: 0; }
         /* 志望校入力 */
         .school-section { margin-top: 16px; }
         .school-section-title { font-size: 14px; font-weight: bold; color: #1A1A1A; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
@@ -184,7 +184,7 @@
 
         <!-- 模試名・実施時期入力 -->
         <div class="exam-name-input-wrap">
-            <label>模試名・テスト名</label>
+            <label>模試名・テスト名 <span style="color:var(--red);">*</span></label>
             <input type="text" id="manual-exam-name" class="exam-name-input" placeholder="例：全統共通テスト模試">
         </div>
         <div class="exam-name-input-wrap">
@@ -426,6 +426,10 @@ async function startAnalysis() {
     const manualStudentId = document.getElementById('manual-student-id').value.trim();
     if (!manualStudentId) {
         alert('生徒IDを入力してください。');
+        return;
+    }
+        if (!document.getElementById('manual-exam-name').value.trim()) {
+        alert('模試名・テスト名を入力してください。');
         return;
     }
     if (!document.getElementById('manual-exam-date').value) {
