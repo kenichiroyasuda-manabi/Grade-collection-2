@@ -93,6 +93,9 @@ body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-
   <h1>成績推移 <span class="who" id="who"></span></h1>
 </div>
 
+<!-- 兄弟など複数の生徒が同じLINEに紐づく場合だけ表示される切り替えタブ -->
+<div class="subj" id="stud"></div>
+
 <div class="mode">
   <button id="m-mock" class="on" onclick="setMode('模試')">模試</button>
   <button id="m-test" onclick="setMode('定期テスト')">定期テスト</button>
@@ -128,13 +131,13 @@ body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-
 const GAS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwHbfg6wxMK2FOzf1ws9tXx04q3cVtKJydV2hm2ch4Vp4NjaM8pbTJG4YiKrAas9Q8c/exec';  // 収集システムと同じURL
 const MY_LIFF_ID   = '2009442207-cCpmXVnx';              // 成績推移(chart)用のLIFF ID ※提出用(index)とは別
 
-  
-  // 収集システムと同じLIFF ID
 // ═══════════════════════════════════════════
 //  状態
 // ═══════════════════════════════════════════
-let RAW = [];              // GASから取得した成績レコード（{exam_id,mode,exam_name,term,sort,subject,score,max,dev}）
+let RAW = [];              // GASから取得した成績レコード（{exam_id,code,mode,exam_name,term,sort,subject,score,max,dev}）
 let STUDENT_NAME = '';     // LINEの表示名
+let STUDENTS = [];         // このLINEに紐づく生徒一覧（{code, name}）。兄弟がいる場合は複数
+let currentStudent = null; // 表示中の生徒ID
 let mode='模試', axis='deviation', currentSubject=null, chart=null;
 
 // ═══════════════════════════════════════════
@@ -182,9 +185,11 @@ async function boot(){
     if(data.status !== 'ok'){ showError(data.message || 'データの取得に失敗しました。'); return; }
 
     RAW = (data.records || []).map(r => ({
-      exam_id:r.exam_id, mode:r.mode, exam_name:r.exam_name, term:r.term,
+      exam_id:r.exam_id, code:r.code||'', mode:r.mode, exam_name:r.exam_name, term:r.term,
       sort:r.sort, subject:r.subject, score:r.score, max:r.max, dev:r.dev
     }));
+    STUDENTS = data.students || [];
+    currentStudent = STUDENTS.length > 0 ? STUDENTS[0].code : null;
 
     if(RAW.length === 0){
       showError('まだ成績の記録がありません。<br>成績を提出すると、ここに推移が表示されます。'
@@ -214,7 +219,9 @@ function showError(msg){
 // ═══════════════════════════════════════════
 //  データ整形
 // ═══════════════════════════════════════════
-const inMode=()=>RAW.filter(r=>r.mode===mode);
+// 生徒が複数いる場合は選択中の生徒IDで絞り込む（1人なら全件＝従来どおり）
+const inStudent=()=>STUDENTS.length>1 ? RAW.filter(r=>r.code===currentStudent) : RAW;
+const inMode=()=>inStudent().filter(r=>r.mode===mode);
 function dSubjects(){const s=[];inMode().forEach(r=>{if(!s.includes(r.subject))s.push(r.subject);});return s;}
 function series(){
   return inMode().filter(r=>r.subject===currentSubject)
@@ -290,7 +297,18 @@ function renderHist(){
       <div class="dv ${r.dev==null?'none':''}">${r.dev!=null?r.dev:'—'}</div></div>`;});
   box.innerHTML=h;
 }
-function renderAll(){renderButtons();renderChips();renderChart();renderSummary();renderHist();}
+function renderStudents(){
+  const w=document.getElementById('stud');w.innerHTML='';
+  if(STUDENTS.length<2)return;  // 1人なら切り替え不要なので非表示
+  STUDENTS.forEach(s=>{
+    const b=document.createElement('button');
+    b.className='chip'+(s.code===currentStudent?' on':'');
+    b.textContent=s.name?`${s.name}（${s.code}）`:s.code;
+    b.onclick=()=>{currentStudent=s.code;currentSubject=null;renderAll();};
+    w.appendChild(b);
+  });
+}
+function renderAll(){renderStudents();renderButtons();renderChips();renderChart();renderSummary();renderHist();}
 function setMode(m){mode=m;currentSubject=null;renderAll();}
 function setAxis(a){if(mode==='定期テスト'&&a==='deviation')return;axis=a;renderAll();}
 
