@@ -301,7 +301,7 @@ function renderStudents(){
   STUDENTS.forEach(s=>{
     const b=document.createElement('button');
     b.className='chip'+(s.code===currentStudent?' on':'');
-    b.textContent=s.name?`${s.code} ${s.name}`:s.code;
+    b.textContent=s.name?`${s.code} ${s.name}様`:s.code;
     b.onclick=()=>{currentStudent=s.code;currentSubject=null;renderAll();};
     w.appendChild(b);
   });
