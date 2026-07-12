@@ -90,7 +90,7 @@ body{font-family:-apple-system,'Hiragino Kaku Gothic ProN','Hiragino Sans',sans-
 
 <div class="top">
   <div class="eyebrow">成績の記録</div>
-  <h1>成績推移 <span class="who" id="who"></span></h1>
+  <h1>成績推移</h1>
 </div>
 
 <!-- 兄弟など複数の生徒が同じLINEに紐づく場合だけ表示される切り替えタブ -->
@@ -169,7 +169,6 @@ async function boot(){
   //   本番でLINEから使うときは、この if ブロックごと削除してよい
   if(!lineUserId && GAS_ENDPOINT.includes('ここに')){
     RAW = DEMO_DATA(); STUDENT_NAME = '田中 太郎';
-    document.getElementById('who').textContent = STUDENT_NAME+'さん';
     renderAll(); return;
   }
   // ▲▲ ここまで動作確認用 ▲▲
@@ -196,7 +195,6 @@ async function boot(){
         +'<br><br><span style="font-size:9px;color:#C8BEB7;word-break:break-all;">ID: '+(lineUserId||'不明')+'</span>');
       return;
     }
-    document.getElementById('who').textContent = STUDENT_NAME ? STUDENT_NAME+'さん' : '';
     renderAll();
   }catch(e){
     showError('通信エラーが発生しました。<br>電波の良い場所で開き直してください。');
@@ -303,7 +301,7 @@ function renderStudents(){
   STUDENTS.forEach(s=>{
     const b=document.createElement('button');
     b.className='chip'+(s.code===currentStudent?' on':'');
-    b.textContent=s.name?`${s.name}（${s.code}）`:s.code;
+    b.textContent=s.name?`${s.code} ${s.name}`:s.code;
     b.onclick=()=>{currentStudent=s.code;currentSubject=null;renderAll();};
     w.appendChild(b);
   });
